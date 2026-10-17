@@ -5,4 +5,4 @@
 - `.github/workflows/ios-test-build.yml`: bouwt ongetekende `.ipa`-bestanden en zet ze bij **Releases**.
 
 De testversie laadt het spel van https://puzzellab-test.vercel.app, zodat aanpassingen vanzelf binnenkomen.
-Haal `server` uit `capacitor.config.ts` voor de versie die naar de App Store gaat.
+Haal `server` uit `capacitor.config.json` voor de versie die naar de App Store gaat.

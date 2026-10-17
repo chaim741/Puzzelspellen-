@@ -1,0 +1,13 @@
+{
+  "appId": "nl.puzzellab.balancestack",
+  "appName": "Balance Stack",
+  "webDir": "www",
+  "backgroundColor": "#0b0d1a",
+  "ios": {
+    "contentInset": "never"
+  },
+  "server": {
+    "url": "https://puzzellab-test.vercel.app/balance/",
+    "errorPath": "index.html"
+  }
+}
