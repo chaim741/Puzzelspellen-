@@ -1,4 +1,12 @@
 // ---------- App framework: one game, home / play / settings, daily puzzle, first-play tutorial ----------
+// iOS 15 Safari has no canvas roundRect yet
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+    r = Math.max(0, Math.min(+r || 0, Math.abs(w) / 2, Math.abs(h) / 2));
+    this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r); this.arcTo(x + w, y + h, x, y + h, r);
+    this.arcTo(x, y + h, x, y, r); this.arcTo(x, y, x + w, y, r); this.closePath();
+  };
+}
 const GAMES = [];
 const LAB = (() => {
   const COLORS = ['#ff6b57', '#ffc93c', '#2fe0a0', '#48b8ff', '#c58cff', '#ff8fc7'];
