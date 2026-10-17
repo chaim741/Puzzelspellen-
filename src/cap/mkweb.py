@@ -9,7 +9,7 @@ i=h.index('</style>')+len('</style>')
 doc+=h[:i]+'\n</head>\n<body>\n'+h[i:]+'\n</body>\n</html>\n'
 os.makedirs(dst+'/fonts',exist_ok=True)
 open(dst+'/index.html','w').write(doc)
-fd='../fonts'
+fd='../fonts2'
 for f in os.listdir(fd):
     if f.endswith('.woff2'): shutil.copy(fd+'/'+f,dst+'/fonts/'+f)
 shutil.copy(fd+'/local.css',dst+'/fonts.css')

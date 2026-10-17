@@ -2,7 +2,7 @@
   "appId": "nl.puzzellab.seamshift",
   "appName": "SeamShift",
   "webDir": "www",
-  "backgroundColor": "#0b0d1a",
+  "backgroundColor": "#f4efe7",
   "ios": {
     "contentInset": "never"
   },

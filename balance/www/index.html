@@ -4,127 +4,172 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Balance Stack</title>
-<meta name="theme-color" content="#0b0d1a">
+<meta name="theme-color" content="#f4efe7">
 <link rel="stylesheet" href="fonts.css">
 <style>
-/* App shell: a home screen, a play screen and a settings sheet. One game per app; the screens fill the phone without page scroll. */
+/* App shell: a home screen, a play screen and bottom sheets. One game per app; the screens fill the phone without page scroll.
+   Look: warm paper background, white cards that sit slightly raised, pressable buttons with a solid bottom edge. */
 :root {
-  color-scheme: dark;
-  --ink: #0b0d1a; --deep: #141833; --cell: #1c2142; --line: #2a3060;
-  --day: #fff4e0; --night: #7f8cff; --text: #eef0ff; --muted: #9aa0c8; --gold: #ffc93c; --danger: #ff6b57; --accent: #c58cff;
-  --display: "Unbounded", "Arial Black", system-ui, sans-serif;
-  --body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+  --bg: #f4efe7; --bg-hi: #fbf8f3; --card: #ffffff; --edge: #e4dccf; --line: #ebe4d9;
+  --ink: #2b2540; --muted: #8a8299; --gold: #f2a01c; --danger: #e5533f;
+  --accent: #8b5cf6; --accent-deep: #6438cf; --accent-soft: #ebe4fd;
+  --display: "Fredoka", "Arial Rounded MT Bold", system-ui, sans-serif;
+  --body: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
   --st: env(safe-area-inset-top, 0px); --sb: env(safe-area-inset-bottom, 0px);
+  --lift: 0 4px 0 var(--edge), 0 14px 28px -18px rgba(70, 50, 30, .45);
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { height: 100%; margin: 0; }
 body {
-  background: radial-gradient(120% 70% at 50% 0%, #1a1f45 0%, var(--ink) 62%) fixed, var(--ink);
-  color: var(--text); font-family: var(--body); overscroll-behavior: none; overflow: hidden;
+  background: radial-gradient(130% 80% at 50% 0%, var(--bg-hi) 0%, var(--bg) 60%) fixed, var(--bg);
+  color: var(--ink); font-family: var(--body); font-weight: 700; overscroll-behavior: none; overflow: hidden;
   -webkit-user-select: none; user-select: none;
 }
 .screen {
   position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center;
-  padding: calc(var(--st) + 14px) max(16px, env(safe-area-inset-right, 0px)) calc(var(--sb) + 16px) max(16px, env(safe-area-inset-left, 0px));
+  padding: calc(var(--st) + 12px) max(16px, env(safe-area-inset-right, 0px)) calc(var(--sb) + 16px) max(16px, env(safe-area-inset-left, 0px));
   transition: opacity .25s ease, transform .25s ease;
 }
-.screen[hidden] { display: flex; opacity: 0; pointer-events: none; transform: scale(.98); }
-.col { width: min(100%, 460px); display: flex; flex-direction: column; }
+.screen[hidden] { display: flex; opacity: 0; pointer-events: none; transform: scale(.985); }
+.col { width: min(100%, 440px); display: flex; flex-direction: column; }
+
+/* buttons: a solid bottom edge that disappears when pressed */
 button {
-  font: 700 15px var(--body); color: var(--text); background: var(--deep); border: 1px solid var(--line);
-  border-radius: 999px; padding: 12px 18px; cursor: pointer; white-space: nowrap; touch-action: manipulation;
+  font: 800 16px var(--body); color: var(--ink); background: var(--card); border: 0;
+  border-radius: 18px; padding: 14px 18px; cursor: pointer; white-space: nowrap; touch-action: manipulation;
+  box-shadow: var(--lift); transition: transform .08s ease, box-shadow .08s ease;
 }
-button:active { transform: scale(.97); }
-button:focus-visible { outline: 2px solid var(--day); outline-offset: 2px; }
-.go { background: var(--day); color: var(--ink); border: 0; font-family: var(--display); font-weight: 700; font-size: 17px; padding: 16px 26px; }
-.alt { background: #1b2a50; border-color: #2f5f8a; background: color-mix(in srgb, var(--accent) 18%, var(--deep)); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
-.icon-btn { width: 44px; height: 44px; padding: 0; display: grid; place-items: center; font-size: 20px; flex: none; }
+button:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--edge), 0 6px 14px -12px rgba(70, 50, 30, .45); }
+button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+button:disabled { opacity: .5; }
+.go {
+  background: var(--accent); color: #fff; font-family: var(--display); font-weight: 600; font-size: 20px; letter-spacing: .01em;
+  padding: 17px 26px; box-shadow: 0 5px 0 var(--accent-deep), 0 16px 28px -14px var(--accent);
+}
+.go:active:not(:disabled) { box-shadow: 0 2px 0 var(--accent-deep), 0 8px 16px -12px var(--accent); }
+.icon-btn { width: 46px; height: 46px; padding: 0; display: grid; place-items: center; flex: none; border-radius: 15px; }
+.icon-btn svg { width: 22px; height: 22px; stroke: var(--ink); stroke-width: 2.4; fill: none; stroke-linecap: round; stroke-linejoin: round; }
 
 /* home */
-#home .col { flex: 1; justify-content: space-between; gap: 18px; }
-.home-top { display: flex; justify-content: flex-end; }
-.hero { display: flex; flex-direction: column; align-items: center; gap: 18px; text-align: center; }
-#logo { width: min(46vw, 190px); aspect-ratio: 1; border-radius: 22%; box-shadow: 0 18px 50px -10px #0008; box-shadow: 0 18px 50px -10px color-mix(in srgb, var(--accent) 45%, transparent); }
-.hero h1 { font-family: var(--display); font-weight: 800; font-size: clamp(30px, 10vw, 44px); letter-spacing: -0.03em; margin: 0; line-height: 1; }
-.hero p { margin: 0; color: var(--muted); font-size: 15px; max-width: 30ch; line-height: 1.4; }
-.menu { display: grid; gap: 10px; }
+#home .col { flex: 1; justify-content: space-between; gap: 16px; }
+.home-top { display: flex; justify-content: space-between; }
+.hero { display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; }
+.logo-wrap { position: relative; width: min(48vw, 200px); aspect-ratio: 1; margin-bottom: 6px; }
+#logo { width: 100%; height: 100%; border-radius: 24%; box-shadow: 0 8px 0 var(--edge), 0 26px 44px -20px rgba(70, 50, 30, .55); }
+.hero h1 { font-family: var(--display); font-weight: 700; font-size: clamp(36px, 11vw, 48px); letter-spacing: -0.01em; margin: 0; line-height: 1; }
+.hero p { margin: 0; color: var(--muted); font-size: 16px; font-weight: 700; max-width: 28ch; line-height: 1.4; }
+.menu { display: grid; gap: 12px; }
 .menu button { width: 100%; }
-.daily { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.daily small { font: 600 13px var(--body); color: var(--muted); }
-.records { display: flex; gap: 10px; justify-content: center; }
-.rec { flex: 1; background: var(--deep); border: 1px solid var(--line); border-radius: 16px; padding: 10px 12px; text-align: center; }
-.rec span { display: block; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
-.rec b { font-family: var(--display); font-size: 20px; font-variant-numeric: tabular-nums; }
+.daily { display: flex; justify-content: space-between; align-items: center; gap: 10px; text-align: left; padding: 14px 16px; }
+.daily .lbl { display: flex; align-items: center; gap: 12px; font-size: 17px; }
+.daily .cal { width: 38px; height: 38px; border-radius: 12px; background: var(--accent-soft); display: grid; place-items: center; color: var(--accent-deep); font: 600 15px var(--display); }
+.daily small { font: 700 13px var(--body); color: var(--muted); }
+.records { display: flex; gap: 12px; }
+.rec { flex: 1; background: var(--card); border-radius: 18px; padding: 10px 12px 12px; text-align: center; box-shadow: var(--lift); }
+.rec span { display: block; font-size: 12px; font-weight: 800; color: var(--muted); }
+.rec b { font-family: var(--display); font-weight: 600; font-size: 26px; font-variant-numeric: tabular-nums; }
 
 /* play */
 #play .col { flex: 1; gap: 10px; align-items: stretch; }
 .bar { display: flex; align-items: center; gap: 10px; }
-.bar .mode { flex: 1; min-width: 0; font: 700 13px var(--body); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bar .mode b { color: var(--accent); }
-.stats { display: flex; gap: 6px; }
-.stat { background: var(--deep); border: 1px solid var(--line); border-radius: 12px; padding: 5px 10px; min-width: 64px; text-align: right; }
-.stat b { display: block; font-family: var(--display); font-weight: 700; font-size: 17px; font-variant-numeric: tabular-nums; }
-.stat span { font-size: 9px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
-.info { min-height: 20px; text-align: center; color: var(--gold); font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; }
+.bar .mode { flex: 1; min-width: 0; font-weight: 800; font-size: 14px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar .mode b { color: var(--accent-deep); }
+.stats { display: flex; gap: 8px; }
+.stat { background: var(--card); border-radius: 15px; padding: 5px 12px 6px; min-width: 72px; text-align: center; box-shadow: var(--lift); }
+.stat b { display: block; font-family: var(--display); font-weight: 600; font-size: 21px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 11px; font-weight: 800; color: var(--muted); }
+.info { min-height: 30px; display: flex; justify-content: center; }
+.info span { background: var(--accent-soft); color: var(--accent-deep); border-radius: 999px; padding: 5px 14px; font-weight: 800; font-size: 14px; font-variant-numeric: tabular-nums; }
+.info span:empty { display: none; }
 .well { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; }
-.stage { position: relative; width: min(100%, 460px); aspect-ratio: 1; touch-action: none; }
-.stage.fit { width: auto; height: 100%; max-width: 100%; }
-canvas { width: 100%; height: 100%; display: block; border-radius: 22px; }
+.stage { position: relative; width: min(100%, 440px); aspect-ratio: 1; touch-action: none; }
+canvas#cv { width: 100%; height: 100%; display: block; border-radius: 26px; box-shadow: 0 6px 0 var(--edge), 0 24px 40px -22px rgba(70, 50, 30, .5); }
 .coach {
-  pointer-events: none;
-  background: #0b0d1ae0; border: 1px solid var(--line); background: color-mix(in srgb, var(--ink) 88%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 60%, var(--line));
-  border-radius: 14px; padding: 10px 14px; font-size: 15px; font-weight: 600; line-height: 1.35; text-align: center;
-  transition: opacity .3s ease, transform .3s ease;
+  pointer-events: none; background: var(--card); color: var(--ink); border-radius: 16px; padding: 11px 16px;
+  font-size: 16px; font-weight: 800; line-height: 1.35; text-align: center; box-shadow: var(--lift);
+  border-left: 5px solid var(--accent); transition: opacity .3s ease, transform .3s ease;
 }
 .coach[hidden] { display: none; }
 .overlay {
-  position: absolute; inset: 0; z-index: 3; border-radius: 22px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 12px; text-align: center; padding: 22px;
-  background: #0b0d1adb; background: color-mix(in srgb, var(--ink) 86%, transparent); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  position: absolute; inset: 0; z-index: 3; border-radius: 26px; display: flex; align-items: center; justify-content: center; padding: 18px;
+  background: rgba(244, 239, 231, .7); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  animation: fadeIn .25s ease;
 }
 .overlay[hidden] { display: none; }
-.overlay h2 { font-family: var(--display); font-weight: 800; font-size: clamp(20px, 6vw, 28px); margin: 0; }
-.overlay .big { font-family: var(--display); font-weight: 800; font-size: clamp(42px, 14vw, 64px); line-height: 1; font-variant-numeric: tabular-nums; }
-.overlay p { margin: 0; color: var(--muted); font-size: 14px; max-width: 30ch; }
-.overlay .row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-.new { color: var(--gold); }
-.foot { display: flex; justify-content: space-between; gap: 8px; }
-.foot .ctl { align-self: center; font-size: 13px; color: var(--muted); text-align: center; flex: 1; }
+.over-card {
+  width: 100%; max-width: 320px; background: var(--card); border-radius: 26px; padding: 22px 20px 20px; text-align: center;
+  display: grid; gap: 10px; box-shadow: 0 6px 0 var(--edge), 0 30px 50px -26px rgba(70, 50, 30, .6); animation: popIn .35s cubic-bezier(.2, 1.4, .4, 1);
+}
+.over-card h2 { font-family: var(--display); font-weight: 600; font-size: 24px; margin: 0; color: var(--muted); }
+.over-card h2.new { color: var(--gold); }
+.over-card .big { font-family: var(--display); font-weight: 700; font-size: clamp(52px, 16vw, 68px); line-height: 1; color: var(--accent); font-variant-numeric: tabular-nums; }
+.over-card p { margin: 0 auto 4px; color: var(--muted); font-size: 15px; max-width: 26ch; line-height: 1.4; }
+.over-card .row { display: grid; gap: 10px; }
+@keyframes fadeIn { from { opacity: 0; } }
+@keyframes popIn { from { opacity: 0; transform: translateY(14px) scale(.94); } }
+.foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.foot .ctl { font-size: 13px; font-weight: 700; color: var(--muted); text-align: center; flex: 1; line-height: 1.3; }
 
-/* settings sheet */
-.sheet-bg { position: fixed; inset: 0; z-index: 20; background: #0008; display: flex; align-items: flex-end; justify-content: center; transition: opacity .2s ease; }
+/* bottom sheets */
+.sheet-bg { position: fixed; inset: 0; z-index: 20; background: rgba(43, 37, 64, .28); display: flex; align-items: flex-end; justify-content: center; transition: opacity .2s ease; }
 .sheet-bg[hidden] { display: flex; opacity: 0; pointer-events: none; }
 .sheet {
-  width: min(100%, 480px); max-height: 86vh; max-height: 86dvh; overflow: auto; background: var(--deep); border: 1px solid var(--line); border-bottom: 0;
-  border-radius: 22px 22px 0 0; padding: 18px 18px calc(var(--sb) + 18px); display: grid; gap: 14px;
-  transition: transform .25s ease; -webkit-user-select: text; user-select: text;
+  width: min(100%, 480px); max-height: 88vh; max-height: 88dvh; overflow: auto; background: var(--bg); border-radius: 28px 28px 0 0;
+  padding: 10px 18px calc(var(--sb) + 20px); display: grid; gap: 14px; align-content: start;
+  transition: transform .28s cubic-bezier(.2, .9, .3, 1); box-shadow: 0 -10px 40px -20px rgba(43, 37, 64, .5);
 }
-.sheet-bg[hidden] .sheet { transform: translateY(30px); }
-.sheet h3 { font-family: var(--display); font-size: 18px; margin: 0; }
+.sheet::before { content: ""; justify-self: center; width: 40px; height: 5px; border-radius: 3px; background: var(--edge); }
+.sheet-bg[hidden] .sheet { transform: translateY(40px); }
+.sheet h3 { font-family: var(--display); font-weight: 600; font-size: 24px; margin: 0; }
+.sheet h4 { margin: 6px 4px 0; font-size: 13px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
 .sheet-head { display: flex; justify-content: space-between; align-items: center; }
-.toggle { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-weight: 600; font-size: 16px; }
-.switch { width: 52px; height: 30px; padding: 0; border-radius: 999px; position: relative; background: var(--line); border: 0; }
-.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: var(--day); transition: transform .2s ease; }
+.group { background: var(--card); border-radius: 20px; box-shadow: var(--lift); overflow: hidden; }
+.toggle { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; font-size: 17px; }
+.toggle + .toggle { border-top: 2px solid var(--line); }
+.switch { width: 54px; height: 32px; padding: 0; border-radius: 999px; position: relative; background: var(--edge); box-shadow: inset 0 2px 3px rgba(0, 0, 0, .08); }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgba(0, 0, 0, .18); transition: transform .2s ease; }
 .switch[aria-checked="true"] { background: var(--accent); }
 .switch[aria-checked="true"]::after { transform: translateX(22px); }
-.sheet ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 14px; line-height: 1.45; }
-.sheet .small { font-size: 12px; color: var(--muted); margin: 0; }
+.switch:active:not(:disabled) { transform: none; }
+.link-row { width: 100%; display: flex; justify-content: space-between; align-items: center; text-align: left; font-size: 17px; }
+.link-row svg { width: 18px; height: 18px; stroke: var(--muted); stroke-width: 2.6; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.rules { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; counter-reset: rule; }
+.rules li { background: var(--card); border-radius: 20px; padding: 14px 16px 14px 62px; position: relative; box-shadow: var(--lift); min-height: 64px; }
+.rules li::before {
+  counter-increment: rule; content: counter(rule); position: absolute; left: 14px; top: 14px; width: 34px; height: 34px; border-radius: 11px;
+  display: grid; place-items: center; font: 600 18px var(--display); color: #fff; background: var(--accent); box-shadow: 0 3px 0 var(--accent-deep);
+}
+.rules b { display: block; font-family: var(--display); font-weight: 600; font-size: 18px; margin-bottom: 2px; }
+.rules span { display: block; font-weight: 700; font-size: 15px; line-height: 1.4; color: var(--muted); }
+.sheet .small { font-size: 13px; color: var(--muted); margin: 0 4px; text-align: center; }
 .daily-res { text-align: center; }
-.daily-res .small { font-size: 14px; }
-.ds-score { font-family: var(--display); font-weight: 800; font-size: 56px; line-height: 1; color: var(--accent); font-variant-numeric: tabular-nums; }
-button:disabled { opacity: .45; }
-[hidden]#restartBtn { display: none; }
-@media (prefers-reduced-motion: reduce) { .screen, .sheet, .coach, .sheet-bg { transition: none; } }
+.daily-res .small { font-size: 15px; }
+.ds-score { font-family: var(--display); font-weight: 700; font-size: 64px; line-height: 1; color: var(--accent); font-variant-numeric: tabular-nums; }
+[hidden]#restartBtn { visibility: hidden; display: grid; }
+@media (prefers-reduced-motion: reduce) { .screen, .sheet, .coach, .sheet-bg, button { transition: none; } .overlay, .over-card { animation: none; } }
 </style>
 </head>
 <body>
 
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M21.2 12h-2.4M5.2 12H2.8M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7M18.5 18.5l-1.7-1.7M7.2 7.2 5.5 5.5"/><circle cx="12" cy="12" r="6.6"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .9-1 1.6v.4"/><path d="M12 17h.01"/></symbol>
+  <symbol id="i-redo" viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4.5 4.5v4h4"/></symbol>
+  <symbol id="i-next" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+</svg>
+
 <section class="screen" id="home">
   <div class="col">
-    <div class="home-top"><button class="icon-btn" id="setBtn1" aria-label="Instellingen">⚙︎</button></div>
+    <div class="home-top">
+      <button class="icon-btn" id="helpBtn" aria-label="Spelregels"><svg><use href="#i-help"/></svg></button>
+      <button class="icon-btn" id="setBtn1" aria-label="Instellingen"><svg><use href="#i-gear"/></svg></button>
+    </div>
     <div class="hero">
-      <canvas id="logo" aria-hidden="true"></canvas>
+      <div class="logo-wrap"><canvas id="logo" aria-hidden="true"></canvas></div>
       <h1 id="appName">Balance Stack</h1>
       <p id="appPitch"></p>
     </div>
@@ -134,7 +179,7 @@ button:disabled { opacity: .45; }
         <div class="rec"><span>Dagpuzzel</span><b id="homeDaily">–</b></div>
       </div>
       <button class="go" id="playBtn">Spelen</button>
-      <button class="alt daily" id="dailyBtn"><span>Dagpuzzel</span><small id="dailyDate"></small></button>
+      <button class="daily" id="dailyBtn"><span class="lbl"><span class="cal" id="dailyDay"></span>Dagpuzzel</span><small id="dailyDate"></small></button>
     </div>
   </div>
 </section>
@@ -142,37 +187,39 @@ button:disabled { opacity: .45; }
 <section class="screen" id="play" hidden>
   <div class="col">
     <div class="bar">
-      <button class="icon-btn" id="homeBtn" aria-label="Naar start">←</button>
+      <button class="icon-btn" id="homeBtn" aria-label="Naar start"><svg><use href="#i-back"/></svg></button>
       <div class="mode" id="mode"></div>
       <div class="stats">
         <div class="stat"><span>Score</span><b id="score">0</b></div>
         <div class="stat"><span>Record</span><b id="best">0</b></div>
       </div>
     </div>
-    <div class="info" id="info"></div>
+    <div class="info"><span id="info"></span></div>
     <div class="coach" id="coach" hidden></div>
     <div class="well" id="well">
       <div class="stage" id="stage">
         <canvas id="cv" aria-label="Speelveld"></canvas>
         <div class="overlay" id="over" hidden>
-          <h2 id="overTitle">Einde</h2>
-          <div class="big" id="finalScore">0</div>
-          <p id="overText"></p>
-          <div class="row"><button class="go" id="againBtn">Nog een keer</button><button id="toHomeBtn">Naar start</button></div>
+          <div class="over-card">
+            <h2 id="overTitle">Einde</h2>
+            <div class="big" id="finalScore">0</div>
+            <p id="overText"></p>
+            <div class="row"><button class="go" id="againBtn">Nog een keer</button><button id="toHomeBtn">Naar start</button></div>
+          </div>
         </div>
       </div>
     </div>
     <div class="foot">
-      <button id="restartBtn">Opnieuw</button>
+      <button class="icon-btn" id="restartBtn" aria-label="Opnieuw beginnen"><svg><use href="#i-redo"/></svg></button>
       <span class="ctl" id="ctl"></span>
-      <button class="icon-btn" id="setBtn2" aria-label="Instellingen">⚙︎</button>
+      <button class="icon-btn" id="setBtn2" aria-label="Instellingen"><svg><use href="#i-gear"/></svg></button>
     </div>
   </div>
 </section>
 
 <div class="sheet-bg" id="dailySheet" hidden>
   <div class="sheet daily-res" role="dialog" aria-modal="true" aria-labelledby="dsTitle">
-    <div class="sheet-head"><h3 id="dsTitle">Dagpuzzel</h3><button class="icon-btn" id="dsClose" aria-label="Sluiten">✕</button></div>
+    <div class="sheet-head"><h3 id="dsTitle">Dagpuzzel</h3><button class="icon-btn" id="dsClose" aria-label="Sluiten"><svg><use href="#i-close"/></svg></button></div>
     <p class="small">Je hebt de dagpuzzel van vandaag gespeeld. Je score:</p>
     <div class="ds-score" id="dsScore">0</div>
     <p class="small" id="dsNext"></p>
@@ -182,13 +229,22 @@ button:disabled { opacity: .45; }
 
 <div class="sheet-bg" id="sheet" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="setTitle">
-    <div class="sheet-head"><h3 id="setTitle">Instellingen</h3><button class="icon-btn" id="closeSet" aria-label="Sluiten">✕</button></div>
-    <div class="toggle"><span>Geluid</span><button class="switch" id="sndSw" role="switch" aria-checked="true" aria-label="Geluid"></button></div>
-    <div class="toggle"><span>Trillen</span><button class="switch" id="vibSw" role="switch" aria-checked="true" aria-label="Trillen"></button></div>
-    <button id="tutBtn">Uitleg opnieuw spelen</button>
-    <h3>Spelregels</h3>
-    <ol id="rules"></ol>
+    <div class="sheet-head"><h3 id="setTitle">Instellingen</h3><button class="icon-btn" id="closeSet" aria-label="Sluiten"><svg><use href="#i-close"/></svg></button></div>
+    <div class="group">
+      <div class="toggle"><span>Geluid</span><button class="switch" id="sndSw" role="switch" aria-checked="true" aria-label="Geluid"></button></div>
+      <div class="toggle"><span>Trillen</span><button class="switch" id="vibSw" role="switch" aria-checked="true" aria-label="Trillen"></button></div>
+    </div>
+    <button class="link-row" id="rulesBtn">Spelregels<svg><use href="#i-next"/></svg></button>
+    <button class="link-row" id="tutBtn">Uitleg opnieuw spelen<svg><use href="#i-next"/></svg></button>
     <p class="small">Je scores worden alleen op dit toestel bewaard.</p>
+  </div>
+</div>
+
+<div class="sheet-bg" id="rulesSheet" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
+    <div class="sheet-head"><h3 id="rulesTitle">Zo speel je</h3><button class="icon-btn" id="closeRules" aria-label="Sluiten"><svg><use href="#i-close"/></svg></button></div>
+    <ol class="rules" id="rules"></ol>
+    <button class="go" id="rulesPlay">Spelen</button>
   </div>
 </div>
 <script>
@@ -203,7 +259,7 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
 }
 const GAMES = [];
 const LAB = (() => {
-  const COLORS = ['#ff6b57', '#ffc93c', '#2fe0a0', '#48b8ff', '#c58cff', '#ff8fc7'];
+  const COLORS = ['#ef5b4c', '#f5a524', '#2dbf84', '#3b8cff', '#8b5cf6', '#ff6fa8'];
   const $ = id => document.getElementById(id);
   const cv = $('cv'), ctx = cv.getContext('2d'), stage = $('stage'), well = $('well');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -231,7 +287,10 @@ const LAB = (() => {
 
   // sound
   let ac = null;
-  function audio() { if (!soundOn) return null; try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); } catch { ac = null; } return ac; }
+  function audio() { if (!soundOn) return null; try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); if (ac.state !== 'running') ac.resume(); } catch { ac = null; } return ac; }
+  // iOS only lets sound start from the end of a tap; a silent blip on every tap keeps the audio unlocked
+  const unlock = () => { const a = audio(); if (!a) return; try { const b = a.createBuffer(1, 1, 22050), src = a.createBufferSource(); src.buffer = b; src.connect(a.destination); src.start(0); } catch {} };
+  for (const ev of ['touchend', 'pointerup', 'click']) addEventListener(ev, unlock, { passive: true, capture: true });
   function tone(freq, dur = 0.14, type = 'triangle', vol = 0.15, when = 0) {
     const a = audio(); if (!a) return;
     const t = a.currentTime + when, o = a.createOscillator(), g = a.createGain();
@@ -252,19 +311,43 @@ const LAB = (() => {
   };
 
   // drawing helpers
-  function shape(s, x, y, r, mode = 'fill', color) {
+  const hex = c => { const n = parseInt(c.slice(1, 7), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+  // mix a colour toward white (amt > 0) or toward a deep ink (amt < 0)
+  const shade = (c, amt) => { const [r, g, b] = hex(c), t = amt > 0 ? [255, 255, 255] : [40, 30, 60], k = Math.abs(amt); return `rgb(${Math.round(r + (t[0] - r) * k)},${Math.round(g + (t[1] - g) * k)},${Math.round(b + (t[2] - b) * k)})`; };
+  // a raised rounded block: soft shadow, darker side, lit face, a little gloss
+  function block(x, y, w, color, r = w * 0.24, c = ctx) {
+    const d = w * 0.09, h = w - d;
+    c.fillStyle = 'rgba(70,50,30,.16)'; c.beginPath(); c.roundRect(x - w / 2 + w * 0.04, y - h / 2 + d + w * 0.06, w - w * 0.08, h, r); c.fill();
+    c.fillStyle = shade(color, -0.28); c.beginPath(); c.roundRect(x - w / 2, y - h / 2 + d * 0.2, w, h + d * 0.8, r); c.fill();
+    const g = c.createLinearGradient(0, y - h / 2 - d * 0.4, 0, y + h / 2); g.addColorStop(0, shade(color, 0.2)); g.addColorStop(1, color);
+    c.fillStyle = g; c.beginPath(); c.roundRect(x - w / 2, y - h / 2 - d * 0.4, w, h, r); c.fill();
+    c.fillStyle = 'rgba(255,255,255,.28)'; c.beginPath(); c.roundRect(x - w / 2 + w * 0.12, y - h / 2 - d * 0.4 + w * 0.07, w * 0.76, h * 0.26, r * 0.6); c.fill();
+    return y - d * 0.4;
+  }
+  // a glossy ball lit from the top left
+  function ball(x, y, r, color, c = ctx) {
+    c.fillStyle = 'rgba(70,50,30,.18)'; c.beginPath(); c.ellipse(x + r * 0.08, y + r * 0.92, r * 0.78, r * 0.2, 0, 0, Math.PI * 2); c.fill();
+    const g = c.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.1, x, y, r);
+    g.addColorStop(0, shade(color, 0.45)); g.addColorStop(0.55, color); g.addColorStop(1, shade(color, -0.3));
+    c.fillStyle = g; c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill();
+    c.fillStyle = 'rgba(255,255,255,.55)'; c.beginPath(); c.ellipse(x - r * 0.32, y - r * 0.45, r * 0.32, r * 0.18, -0.6, 0, Math.PI * 2); c.fill();
+  }
+  function shape(s, x, y, r, mode = 'fill', color, c2 = ctx) {
     const c = color || COLORS[s % COLORS.length];
-    ctx.beginPath();
+    c2.beginPath();
     const k = s % 6;
-    if (k === 0) ctx.arc(x, y, r, 0, Math.PI * 2);
-    else if (k === 1) { const h = r * 1.15; ctx.moveTo(x, y - h); ctx.lineTo(x + h * 0.95, y + h * 0.62); ctx.lineTo(x - h * 0.95, y + h * 0.62); ctx.closePath(); }
-    else if (k === 2) ctx.roundRect(x - r * 0.88, y - r * 0.88, r * 1.76, r * 1.76, r * 0.3);
-    else if (k === 3) { const h = r * 1.2; ctx.moveTo(x, y - h); ctx.lineTo(x + h, y); ctx.lineTo(x, y + h); ctx.lineTo(x - h, y); ctx.closePath(); }
-    else if (k === 4) { for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.5 : r * 1.15; ctx[i ? 'lineTo' : 'moveTo'](x + Math.cos(a) * rr, y + Math.sin(a) * rr); } ctx.closePath(); }
-    else { for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; ctx[i ? 'lineTo' : 'moveTo'](x + Math.cos(a) * r * 1.05, y + Math.sin(a) * r * 1.05); } ctx.closePath(); }
-    if (mode === 'fill') {
-      ctx.fillStyle = c; ctx.fill(); ctx.lineWidth = Math.max(1.5, r * 0.16); ctx.strokeStyle = '#fff4e0'; ctx.lineJoin = 'round'; ctx.stroke();
-    } else { ctx.lineWidth = Math.max(2, r * 0.32); ctx.strokeStyle = c; ctx.lineJoin = 'round'; ctx.stroke(); }
+    if (k === 0) c2.arc(x, y, r, 0, Math.PI * 2);
+    else if (k === 1) { const h = r * 1.15; c2.moveTo(x, y - h); c2.lineTo(x + h * 0.95, y + h * 0.62); c2.lineTo(x - h * 0.95, y + h * 0.62); c2.closePath(); }
+    else if (k === 2) c2.roundRect(x - r * 0.88, y - r * 0.88, r * 1.76, r * 1.76, r * 0.3);
+    else if (k === 3) { const h = r * 1.2; c2.moveTo(x, y - h); c2.lineTo(x + h, y); c2.lineTo(x, y + h); c2.lineTo(x - h, y); c2.closePath(); }
+    else if (k === 4) { for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.5 : r * 1.15; c2[i ? 'lineTo' : 'moveTo'](x + Math.cos(a) * rr, y + Math.sin(a) * rr); } c2.closePath(); }
+    else { for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; c2[i ? 'lineTo' : 'moveTo'](x + Math.cos(a) * r * 1.05, y + Math.sin(a) * r * 1.05); } c2.closePath(); }
+    if (mode === 'emboss') {
+      c2.fillStyle = '#fff'; c2.shadowColor = 'rgba(40,30,60,.3)'; c2.shadowOffsetY = r * 0.14; c2.shadowBlur = r * 0.2; c2.fill();
+      c2.shadowColor = 'transparent'; c2.shadowOffsetY = 0; c2.shadowBlur = 0; c2.lineJoin = 'round'; c2.lineWidth = r * 0.12; c2.strokeStyle = '#fff'; c2.stroke();
+    } else if (mode === 'fill') {
+      c2.fillStyle = c; c2.fill(); c2.lineWidth = Math.max(1.5, r * 0.16); c2.strokeStyle = '#fff'; c2.lineJoin = 'round'; c2.stroke();
+    } else { c2.lineWidth = Math.max(2, r * 0.32); c2.strokeStyle = c; c2.lineJoin = 'round'; c2.stroke(); }
   }
   function rr(x, y, w, h, r, fill, stroke, lw = 1) {
     ctx.beginPath(); ctx.roundRect(x, y, w, h, r);
@@ -281,8 +364,11 @@ const LAB = (() => {
       cell(px, py) { const c = Math.floor((px - ox) / cs), r = Math.floor((py - oy) / cs); return c >= 0 && r >= 0 && c < cols && r < rows ? { c, r } : null; },
       cellF(px, py) { return { c: (px - ox) / cs, r: (py - oy) / cs }; },
       bg(danger) {
-        for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++)
-          rr(ox + c * cs + cs * 0.05, oy + r * cs + cs * 0.05, cs * 0.9, cs * 0.9, cs * 0.16, danger ? '#2a1e3a' : '#1c2142');
+        for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+          const x = ox + c * cs + cs * 0.06, y = oy + r * cs + cs * 0.06, w = cs * 0.88;
+          rr(x, y, w, w, cs * 0.2, danger ? '#ecc9c2' : '#dcd2c3');
+          rr(x, y + cs * 0.05, w, w - cs * 0.05, cs * 0.2, danger ? '#f3d8d2' : '#e6ddcf');
+        }
       },
     };
   }
@@ -302,13 +388,15 @@ const LAB = (() => {
 
 
   const fmt = n => n.toLocaleString('nl-NL');
+  const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
   const bestKey = () => daily ? 'daily_' + today() : 'best';
   function hud() {
     $('score').textContent = fmt(score);
     $('best').textContent = fmt(Math.max(store.get(bestKey(), 0), score));
   }
   const api = {
-    get W() { return W; }, ctx, COLORS, shape, rr, grid, burst, float, banner, shake, tone, note, buzz, reduce,
+    get W() { return W; }, ctx, COLORS, shape, rr, grid, shade, block, ball, burst, float, banner, shake, tone, note, buzz, reduce,
+    get accent() { return cssVar('--accent'); },
     get score() { return score; },
     add(n, x, y, size) { if (!n) return; score += Math.round(n); hud(); if (x != null) float('+' + Math.round(n), x, y, size); },
     info(t) { $('info').textContent = t || ''; },
@@ -376,6 +464,7 @@ const LAB = (() => {
     const d = store.get('daily_' + today(), null);
     $('homeDaily').textContent = d == null ? '–' : fmt(d);
     $('dailyDate').textContent = d == null ? 'nog niet gespeeld' : 'bekijk je score';
+    $('dailyDay').textContent = new Date().getDate();
   }
   // time until the next daily puzzle
   function untilTomorrow() { const n = new Date(), m = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1), t = Math.max(0, m - n); return `${Math.floor(t / 3600000)} u ${Math.floor(t / 60000) % 60} min`; }
@@ -433,6 +522,7 @@ const LAB = (() => {
   document.addEventListener('touchmove', e => { if (!e.target.closest || !e.target.closest('.sheet')) e.preventDefault(); }, { passive: false });
   const KEYS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
   addEventListener('keydown', e => {
+    if (!$('rulesSheet').hidden) { if (e.key === 'Escape') setRules(false); return; }
     if (!$('sheet').hidden) { if (e.key === 'Escape') setSheet(false); return; }
     if (!$('dailySheet').hidden) { if (e.key === 'Escape') dailyResult(false); return; }
     if (!playing) return;
@@ -456,7 +546,8 @@ const LAB = (() => {
     tutStep();
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, W);
     if (shakeAmt > 0.3 && !reduce) { ctx.translate((Math.random() - 0.5) * shakeAmt, (Math.random() - 0.5) * shakeAmt); shakeAmt *= 0.84; } else shakeAmt = 0;
-    rr(0, 0, W, W, 22, '#141833');
+    const tray = ctx.createLinearGradient(0, 0, 0, W); tray.addColorStop(0, '#fffdf9'); tray.addColorStop(1, '#f3ece2');
+    rr(0, 0, W, W, 26, tray);
     cur.draw(api, now, dt);
     if (tut && tut.steps[tut.i] && tut.steps[tut.i].hint && !ended) tut.steps[tut.i].hint(api, now);
     fx = fx.filter(f => (f.life += dt) < f.max);
@@ -468,10 +559,10 @@ const LAB = (() => {
       else {
         ctx.globalAlpha = k < 0.7 ? 1 : 1 - (k - 0.7) / 0.3;
         const big = f.k === 'banner', size = big ? W * 0.058 : W * 0.05 * f.size;
-        ctx.font = `800 ${Math.round(size)}px Unbounded, "Arial Black", sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.font = `700 ${Math.round(size * 1.15)}px Fredoka, "Arial Rounded MT Bold", sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
         const x = big ? W / 2 : f.x, y = big ? W * 0.1 : f.y - W * 0.08 * (1 - Math.pow(1 - k, 3));
-        ctx.lineWidth = size * 0.22; ctx.strokeStyle = '#0b0d1a'; ctx.strokeText(f.text, x, y);
-        ctx.fillStyle = big ? '#ffc93c' : '#fff4e0'; ctx.fillText(f.text, x, y);
+        ctx.lineWidth = size * 0.32; ctx.strokeStyle = '#fff'; ctx.strokeText(f.text, x, y);
+        ctx.fillStyle = big ? '#f2a01c' : '#2b2540'; ctx.fillText(f.text, x, y);
       }
       ctx.globalAlpha = 1;
     }
@@ -488,6 +579,7 @@ const LAB = (() => {
   }
 
   function setSheet(open) { $('sheet').hidden = !open; if (open) $('closeSet').focus({ preventScroll: true }); }
+  function setRules(open) { $('rulesSheet').hidden = !open; if (open) $('closeRules').focus({ preventScroll: true }); }
   function syncSwitches() { $('sndSw').setAttribute('aria-checked', String(soundOn)); $('vibSw').setAttribute('aria-checked', String(vibOn)); }
 
   let APPNAME = '';
@@ -496,7 +588,8 @@ const LAB = (() => {
     soundOn = store.get('sound', true); vibOn = store.get('vib', true); syncSwitches();
     $('appPitch').textContent = app.pitch; $('ctl').textContent = cur.controls;
     $('dailyDate').textContent = '';
-    cur.rules.forEach(r => { const li = document.createElement('li'); li.textContent = r; $('rules').appendChild(li); });
+    // each rule is a small card: a short title and one or two lines
+    cur.rules.forEach(r => { const li = document.createElement('li'), b = document.createElement('b'), sp = document.createElement('span'); b.textContent = r.t; sp.textContent = r.d; li.append(b, sp); $('rules').appendChild(li); });
     const tapThen = f => e => { f(); e.currentTarget.blur(); };
     $('playBtn').onclick = tapThen(() => play(false));
     $('dailyBtn').onclick = tapThen(() => play(true));
@@ -513,6 +606,11 @@ const LAB = (() => {
     $('sndSw').onclick = () => { soundOn = !soundOn; store.set('sound', soundOn); syncSwitches(); if (soundOn) tone(523, 0.1); };
     $('vibSw').onclick = () => { vibOn = !vibOn; store.set('vib', vibOn); syncSwitches(); buzz(20); };
     $('tutBtn').onclick = () => { setSheet(false); daily = false; show('play'); start(true); };
+    $('helpBtn').onclick = () => setRules(true);
+    $('rulesBtn').onclick = () => { setSheet(false); setRules(true); };
+    $('closeRules').onclick = () => setRules(false);
+    $('rulesSheet').onclick = e => { if (e.target.id === 'rulesSheet') setRules(false); };
+    $('rulesPlay').onclick = () => { setRules(false); if (!playing) play(false); };
     show('home');
     // the very first time you open the app you go straight into the tutorial
     if (!store.get('tutDone', false)) play(false);
@@ -633,13 +731,13 @@ Anim.clip = (api, G, cols, rows, fn) => { const { ctx } = api; ctx.save(); ctx.b
 GAMES.push({
   id: 'balancestack', name: 'Balance Stack',
   pitch: 'Bouw hoger zonder dat de wip omslaat.',
-  controls: 'Tik boven een plek om te laten vallen (of ← → en ↓)',
+  controls: 'Tik boven een plek om het gewicht te laten vallen',
   rules: [
-    'Tik boven een van de zeven plekken op de wip. Het getoonde gewicht valt daar.',
-    'Hoe verder van het midden, hoe harder het gewicht trekt.',
-    'Komen twee gelijke gewichten op elkaar, dan smelten ze samen tot één dubbel zo zwaar.',
-    'Precies in balans geeft bonuspunten.',
-    'Slaat de wip te ver door, of wordt een stapel te hoog, dan ben je af.',
+    { t: 'Laat een gewicht vallen', d: 'Tik boven een van de zeven plekken op de wip. Het gewicht bovenin valt daar.' },
+    { t: 'Afstand telt', d: 'Hoe verder van het midden, hoe harder het gewicht aan de wip trekt.' },
+    { t: 'Gelijke gewichten smelten', d: 'Twee gelijke gewichten op elkaar worden één gewicht dat twee keer zo zwaar is.' },
+    { t: 'Zoek de balans', d: 'Staat de wip precies recht, dan krijg je bonuspunten.' },
+    { t: 'Pas op', d: 'Slaat de wip te ver door, of wordt een stapel te hoog, dan ben je af.' },
   ],
   why: 'Leuk om naar te kijken, maar natuurkunde maakt het lastiger om goed af te stellen.',
   start(api) { Anim.setup(this); this.st = Array.from({ length: 7 }, () => []); this.slot = 3; this.limit = 16; this.shownT = 0; this.ang = 0; this.next(api); this.hud(api); },
@@ -690,10 +788,13 @@ GAMES.push({
     const { ctx, W } = api, target = Math.max(-1.3, Math.min(1.3, this.shownT / this.limit)) * 0.3;
     this.ang = (this.ang || 0) + (target - (this.ang || 0)) * Math.min(1, dt / 160);
     const cx = W / 2, cy = W * 0.72;
-    ctx.beginPath(); ctx.moveTo(cx, cy + W * 0.01); ctx.lineTo(cx - W * 0.06, cy + W * 0.12); ctx.lineTo(cx + W * 0.06, cy + W * 0.12); ctx.closePath(); ctx.fillStyle = '#2a3060'; ctx.fill();
+    this.base(ctx, cx, cy, W, api.accent);
     ctx.save(); ctx.translate(cx, cy); ctx.rotate(this.ang);
-    api.rr(-W * 0.43, -W * 0.012, W * 0.86, W * 0.03, W * 0.015, Math.abs(target) > 0.22 ? '#ff6b57' : '#fff4e0');
-    for (let i = 0; i < 7; i++) { ctx.fillStyle = '#9aa0c8'; ctx.beginPath(); ctx.arc((0.08 + (i + 0.5) * 0.84 / 7) * W - cx, W * 0.035, 2.5, 0, Math.PI * 2); ctx.fill(); }
+    const hot = Math.abs(target) > 0.22, pw = W * 0.86, ph = W * 0.03, px = -pw / 2, py = -W * 0.012;
+    ctx.fillStyle = 'rgba(70,50,30,.14)'; ctx.beginPath(); ctx.roundRect(px + 4, py + ph * 0.9, pw - 8, ph, ph / 2); ctx.fill();
+    ctx.fillStyle = hot ? '#c4443a' : '#d9cfc0'; ctx.beginPath(); ctx.roundRect(px, py + ph * 0.35, pw, ph, ph / 2); ctx.fill();
+    ctx.fillStyle = hot ? '#ef5b4c' : '#fff'; ctx.beginPath(); ctx.roundRect(px, py, pw, ph, ph / 2); ctx.fill();
+    for (let i = 0; i < 7; i++) { ctx.fillStyle = hot ? 'rgba(255,255,255,.7)' : '#cfc5d6'; ctx.beginPath(); ctx.arc((0.08 + (i + 0.5) * 0.84 / 7) * W - cx, py + ph / 2, Math.max(2, W * 0.006), 0, Math.PI * 2); ctx.fill(); }
     ctx.restore();
     for (const sp of this.sp.values()) {
       const [tx, ty] = this.slotXY(sp.i, sp.h), sx = (0.08 + (sp.i + 0.5) * 0.84 / 7) * W, sy = W * 0.1;
@@ -701,15 +802,27 @@ GAMES.push({
     }
     if (!api.ended && !Anim.busy(this)) {
       const x = (0.08 + (this.slot + 0.5) * 0.84 / 7) * W;
-      ctx.strokeStyle = '#fff4e033'; ctx.setLineDash([4, 6]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, W * 0.16); ctx.lineTo(x, W * 0.62); ctx.stroke(); ctx.setLineDash([]);
+      ctx.strokeStyle = 'rgba(43,37,64,.18)'; ctx.lineCap = 'round'; ctx.setLineDash([2, 8]); ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x, W * 0.16); ctx.lineTo(x, W * 0.62); ctx.stroke(); ctx.setLineDash([]);
       this.ball(api, x, W * 0.1, this.cur, EASE.back(Math.max(0, Math.min(1, (now - (this.ct0 || 0)) / 260))));
     }
   },
-  ball(api, x, y, l, sc = 1) {
-    const { ctx, W } = api, r = W * (0.03 + l * 0.004) * sc;
+  ball(api, x, y, l, sc = 1, c = api.ctx, rr) {
+    const r = rr || api.W * (0.03 + l * 0.004) * sc;
     if (r <= 0.5) return;
-    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = api.COLORS[l % 6]; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#fff4e0'; ctx.stroke();
-    ctx.fillStyle = '#0b0d1a'; ctx.font = `800 ${Math.round(r * 0.9)}px Unbounded, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(Math.pow(2, l - 1), x, y + 1);
+    api.ball(x, y, r, api.COLORS[l % 6], c);
+    const n = String(Math.pow(2, l - 1));
+    c.font = `700 ${Math.round(r * (n.length > 2 ? 0.72 : 0.92))}px Fredoka, Nunito, sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillStyle = 'rgba(40,30,60,.28)'; c.fillText(n, x, y + r * 0.1);
+    c.fillStyle = '#fff'; c.fillText(n, x, y + r * 0.02);
+  },
+  // the stand under the seesaw: a two-tone wedge in the accent colour
+  base(c, cx, cy, W, acc) {
+    const top = cy + W * 0.01, bot = cy + W * 0.12, hw = W * 0.065;
+    c.fillStyle = 'rgba(70,50,30,.14)'; c.beginPath(); c.ellipse(cx, bot + W * 0.008, hw * 1.5, W * 0.014, 0, 0, Math.PI * 2); c.fill();
+    c.lineJoin = 'round'; c.lineWidth = W * 0.012;
+    c.fillStyle = c.strokeStyle = acc; c.beginPath(); c.moveTo(cx, top); c.lineTo(cx - hw, bot); c.lineTo(cx, bot); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle = c.strokeStyle = LAB.api.shade(acc, -0.25); c.beginPath(); c.moveTo(cx, top); c.lineTo(cx + hw, bot); c.lineTo(cx, bot); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(cx, top + W * 0.012, W * 0.008, 0, Math.PI * 2); c.fill();
   },
 });
 
@@ -724,8 +837,9 @@ Object.assign(GAMES[GAMES.length - 1], {
     this.cur = 1; this.slot = 3;
     const hint = (api, now) => {
       const { ctx, W } = api, x = (0.08 + 3.5 * 0.84 / 7) * W, b = Math.sin(now / 200) * W * 0.012, y = W * 0.2 + b;
-      ctx.fillStyle = '#ffc93c'; ctx.beginPath(); ctx.moveTo(x, y + W * 0.05); ctx.lineTo(x - W * 0.035, y); ctx.lineTo(x + W * 0.035, y); ctx.closePath(); ctx.fill();
-      ctx.globalAlpha = 0.12 + 0.08 * Math.sin(now / 200); api.rr(x - W * 0.06, W * 0.04, W * 0.12, W * 0.62, W * 0.04, '#fff4e0'); ctx.globalAlpha = 1;
+      ctx.globalAlpha = 0.14 + 0.08 * Math.sin(now / 200); api.rr(x - W * 0.06, W * 0.04, W * 0.12, W * 0.62, W * 0.04, api.accent); ctx.globalAlpha = 1;
+      ctx.fillStyle = '#f2a01c'; ctx.strokeStyle = '#fff'; ctx.lineWidth = W * 0.008; ctx.lineJoin = 'round';
+      ctx.beginPath(); ctx.moveTo(x, y + W * 0.05); ctx.lineTo(x - W * 0.035, y); ctx.lineTo(x + W * 0.035, y); ctx.closePath(); ctx.stroke(); ctx.fill();
     };
     return [
       { text: 'Tik boven het midden.', hint, done: () => this.st.flat().length !== 1 || this.st[3].length !== 1 || this.st[3][0].v !== 1 },
@@ -733,18 +847,18 @@ Object.assign(GAMES[GAMES.length - 1], {
       { text: 'Ver van het midden trekt harder. Houd de wip in balans!', wait: 4500 },
     ];
   },
-  drawLogo(c, now) {
-    const g = c.createLinearGradient(0, 0, 0, 512); g.addColorStop(0, '#2a2466'); g.addColorStop(1, '#0d1028');
+  drawLogo(c, now, api) {
+    const g = c.createLinearGradient(0, 0, 0, 512); g.addColorStop(0, '#fbf8f3'); g.addColorStop(1, '#efe6d8');
     c.fillStyle = g; c.fillRect(0, 0, 512, 512);
-    const cols = ['#ff6b57', '#ffc93c', '#2fe0a0', '#48b8ff', '#c58cff'], a = Math.sin(now / 900) * 0.06;
-    c.fillStyle = '#3a4290'; c.beginPath(); c.moveTo(256, 340); c.lineTo(206, 430); c.lineTo(306, 430); c.closePath(); c.fill();
+    const a = Math.sin(now / 900) * 0.06;
+    this.base(c, 256, 330, 512, '#8b5cf6');
     c.save(); c.translate(256, 340); c.rotate(a);
-    c.fillStyle = '#fff4e0'; c.beginPath(); c.roundRect(-200, -12, 400, 24, 12); c.fill();
-    const ball = (x, h, l, r) => { const y = -12 - r - h; c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fillStyle = cols[l]; c.fill(); c.lineWidth = 6; c.strokeStyle = '#fff4e0'; c.stroke();
-      c.fillStyle = '#0b0d1a'; c.font = `800 ${Math.round(r * 0.9)}px Unbounded, "Arial Black", sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(String(2 ** (l - 1)), x, y + 2); };
-    ball(-140, 0, 2, 40); ball(-140, 80, 1, 34);
-    ball(30, 0, 3, 46); ball(30, 92, 2, 40); ball(30, 172, 1, 34);
-    ball(150, 0, 1, 34);
+    c.fillStyle = '#d9cfc0'; c.beginPath(); c.roundRect(-200, -6, 400, 22, 11); c.fill();
+    c.fillStyle = '#fff'; c.beginPath(); c.roundRect(-200, -14, 400, 22, 11); c.fill();
+    const b = (x, h, l, r) => this.ball(api, x, -14 - r - h, l, 1, c, r);
+    b(-140, 0, 2, 40); b(-140, 80, 1, 34);
+    b(30, 0, 3, 46); b(30, 92, 2, 40); b(30, 172, 1, 34);
+    b(150, 0, 1, 34);
     c.restore();
   },
 });

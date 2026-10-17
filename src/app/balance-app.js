@@ -2,13 +2,13 @@
 GAMES.push({
   id: 'balancestack', name: 'Balance Stack',
   pitch: 'Bouw hoger zonder dat de wip omslaat.',
-  controls: 'Tik boven een plek om te laten vallen (of ← → en ↓)',
+  controls: 'Tik boven een plek om het gewicht te laten vallen',
   rules: [
-    'Tik boven een van de zeven plekken op de wip. Het getoonde gewicht valt daar.',
-    'Hoe verder van het midden, hoe harder het gewicht trekt.',
-    'Komen twee gelijke gewichten op elkaar, dan smelten ze samen tot één dubbel zo zwaar.',
-    'Precies in balans geeft bonuspunten.',
-    'Slaat de wip te ver door, of wordt een stapel te hoog, dan ben je af.',
+    { t: 'Laat een gewicht vallen', d: 'Tik boven een van de zeven plekken op de wip. Het gewicht bovenin valt daar.' },
+    { t: 'Afstand telt', d: 'Hoe verder van het midden, hoe harder het gewicht aan de wip trekt.' },
+    { t: 'Gelijke gewichten smelten', d: 'Twee gelijke gewichten op elkaar worden één gewicht dat twee keer zo zwaar is.' },
+    { t: 'Zoek de balans', d: 'Staat de wip precies recht, dan krijg je bonuspunten.' },
+    { t: 'Pas op', d: 'Slaat de wip te ver door, of wordt een stapel te hoog, dan ben je af.' },
   ],
   why: 'Leuk om naar te kijken, maar natuurkunde maakt het lastiger om goed af te stellen.',
   start(api) { Anim.setup(this); this.st = Array.from({ length: 7 }, () => []); this.slot = 3; this.limit = 16; this.shownT = 0; this.ang = 0; this.next(api); this.hud(api); },
@@ -59,10 +59,13 @@ GAMES.push({
     const { ctx, W } = api, target = Math.max(-1.3, Math.min(1.3, this.shownT / this.limit)) * 0.3;
     this.ang = (this.ang || 0) + (target - (this.ang || 0)) * Math.min(1, dt / 160);
     const cx = W / 2, cy = W * 0.72;
-    ctx.beginPath(); ctx.moveTo(cx, cy + W * 0.01); ctx.lineTo(cx - W * 0.06, cy + W * 0.12); ctx.lineTo(cx + W * 0.06, cy + W * 0.12); ctx.closePath(); ctx.fillStyle = '#2a3060'; ctx.fill();
+    this.base(ctx, cx, cy, W, api.accent);
     ctx.save(); ctx.translate(cx, cy); ctx.rotate(this.ang);
-    api.rr(-W * 0.43, -W * 0.012, W * 0.86, W * 0.03, W * 0.015, Math.abs(target) > 0.22 ? '#ff6b57' : '#fff4e0');
-    for (let i = 0; i < 7; i++) { ctx.fillStyle = '#9aa0c8'; ctx.beginPath(); ctx.arc((0.08 + (i + 0.5) * 0.84 / 7) * W - cx, W * 0.035, 2.5, 0, Math.PI * 2); ctx.fill(); }
+    const hot = Math.abs(target) > 0.22, pw = W * 0.86, ph = W * 0.03, px = -pw / 2, py = -W * 0.012;
+    ctx.fillStyle = 'rgba(70,50,30,.14)'; ctx.beginPath(); ctx.roundRect(px + 4, py + ph * 0.9, pw - 8, ph, ph / 2); ctx.fill();
+    ctx.fillStyle = hot ? '#c4443a' : '#d9cfc0'; ctx.beginPath(); ctx.roundRect(px, py + ph * 0.35, pw, ph, ph / 2); ctx.fill();
+    ctx.fillStyle = hot ? '#ef5b4c' : '#fff'; ctx.beginPath(); ctx.roundRect(px, py, pw, ph, ph / 2); ctx.fill();
+    for (let i = 0; i < 7; i++) { ctx.fillStyle = hot ? 'rgba(255,255,255,.7)' : '#cfc5d6'; ctx.beginPath(); ctx.arc((0.08 + (i + 0.5) * 0.84 / 7) * W - cx, py + ph / 2, Math.max(2, W * 0.006), 0, Math.PI * 2); ctx.fill(); }
     ctx.restore();
     for (const sp of this.sp.values()) {
       const [tx, ty] = this.slotXY(sp.i, sp.h), sx = (0.08 + (sp.i + 0.5) * 0.84 / 7) * W, sy = W * 0.1;
@@ -70,15 +73,27 @@ GAMES.push({
     }
     if (!api.ended && !Anim.busy(this)) {
       const x = (0.08 + (this.slot + 0.5) * 0.84 / 7) * W;
-      ctx.strokeStyle = '#fff4e033'; ctx.setLineDash([4, 6]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, W * 0.16); ctx.lineTo(x, W * 0.62); ctx.stroke(); ctx.setLineDash([]);
+      ctx.strokeStyle = 'rgba(43,37,64,.18)'; ctx.lineCap = 'round'; ctx.setLineDash([2, 8]); ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x, W * 0.16); ctx.lineTo(x, W * 0.62); ctx.stroke(); ctx.setLineDash([]);
       this.ball(api, x, W * 0.1, this.cur, EASE.back(Math.max(0, Math.min(1, (now - (this.ct0 || 0)) / 260))));
     }
   },
-  ball(api, x, y, l, sc = 1) {
-    const { ctx, W } = api, r = W * (0.03 + l * 0.004) * sc;
+  ball(api, x, y, l, sc = 1, c = api.ctx, rr) {
+    const r = rr || api.W * (0.03 + l * 0.004) * sc;
     if (r <= 0.5) return;
-    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = api.COLORS[l % 6]; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#fff4e0'; ctx.stroke();
-    ctx.fillStyle = '#0b0d1a'; ctx.font = `800 ${Math.round(r * 0.9)}px Unbounded, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(Math.pow(2, l - 1), x, y + 1);
+    api.ball(x, y, r, api.COLORS[l % 6], c);
+    const n = String(Math.pow(2, l - 1));
+    c.font = `700 ${Math.round(r * (n.length > 2 ? 0.72 : 0.92))}px Fredoka, Nunito, sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillStyle = 'rgba(40,30,60,.28)'; c.fillText(n, x, y + r * 0.1);
+    c.fillStyle = '#fff'; c.fillText(n, x, y + r * 0.02);
+  },
+  // the stand under the seesaw: a two-tone wedge in the accent colour
+  base(c, cx, cy, W, acc) {
+    const top = cy + W * 0.01, bot = cy + W * 0.12, hw = W * 0.065;
+    c.fillStyle = 'rgba(70,50,30,.14)'; c.beginPath(); c.ellipse(cx, bot + W * 0.008, hw * 1.5, W * 0.014, 0, 0, Math.PI * 2); c.fill();
+    c.lineJoin = 'round'; c.lineWidth = W * 0.012;
+    c.fillStyle = c.strokeStyle = acc; c.beginPath(); c.moveTo(cx, top); c.lineTo(cx - hw, bot); c.lineTo(cx, bot); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle = c.strokeStyle = LAB.api.shade(acc, -0.25); c.beginPath(); c.moveTo(cx, top); c.lineTo(cx + hw, bot); c.lineTo(cx, bot); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(cx, top + W * 0.012, W * 0.008, 0, Math.PI * 2); c.fill();
   },
 });
 
@@ -93,8 +108,9 @@ Object.assign(GAMES[GAMES.length - 1], {
     this.cur = 1; this.slot = 3;
     const hint = (api, now) => {
       const { ctx, W } = api, x = (0.08 + 3.5 * 0.84 / 7) * W, b = Math.sin(now / 200) * W * 0.012, y = W * 0.2 + b;
-      ctx.fillStyle = '#ffc93c'; ctx.beginPath(); ctx.moveTo(x, y + W * 0.05); ctx.lineTo(x - W * 0.035, y); ctx.lineTo(x + W * 0.035, y); ctx.closePath(); ctx.fill();
-      ctx.globalAlpha = 0.12 + 0.08 * Math.sin(now / 200); api.rr(x - W * 0.06, W * 0.04, W * 0.12, W * 0.62, W * 0.04, '#fff4e0'); ctx.globalAlpha = 1;
+      ctx.globalAlpha = 0.14 + 0.08 * Math.sin(now / 200); api.rr(x - W * 0.06, W * 0.04, W * 0.12, W * 0.62, W * 0.04, api.accent); ctx.globalAlpha = 1;
+      ctx.fillStyle = '#f2a01c'; ctx.strokeStyle = '#fff'; ctx.lineWidth = W * 0.008; ctx.lineJoin = 'round';
+      ctx.beginPath(); ctx.moveTo(x, y + W * 0.05); ctx.lineTo(x - W * 0.035, y); ctx.lineTo(x + W * 0.035, y); ctx.closePath(); ctx.stroke(); ctx.fill();
     };
     return [
       { text: 'Tik boven het midden.', hint, done: () => this.st.flat().length !== 1 || this.st[3].length !== 1 || this.st[3][0].v !== 1 },
@@ -102,18 +118,18 @@ Object.assign(GAMES[GAMES.length - 1], {
       { text: 'Ver van het midden trekt harder. Houd de wip in balans!', wait: 4500 },
     ];
   },
-  drawLogo(c, now) {
-    const g = c.createLinearGradient(0, 0, 0, 512); g.addColorStop(0, '#2a2466'); g.addColorStop(1, '#0d1028');
+  drawLogo(c, now, api) {
+    const g = c.createLinearGradient(0, 0, 0, 512); g.addColorStop(0, '#fbf8f3'); g.addColorStop(1, '#efe6d8');
     c.fillStyle = g; c.fillRect(0, 0, 512, 512);
-    const cols = ['#ff6b57', '#ffc93c', '#2fe0a0', '#48b8ff', '#c58cff'], a = Math.sin(now / 900) * 0.06;
-    c.fillStyle = '#3a4290'; c.beginPath(); c.moveTo(256, 340); c.lineTo(206, 430); c.lineTo(306, 430); c.closePath(); c.fill();
+    const a = Math.sin(now / 900) * 0.06;
+    this.base(c, 256, 330, 512, '#8b5cf6');
     c.save(); c.translate(256, 340); c.rotate(a);
-    c.fillStyle = '#fff4e0'; c.beginPath(); c.roundRect(-200, -12, 400, 24, 12); c.fill();
-    const ball = (x, h, l, r) => { const y = -12 - r - h; c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fillStyle = cols[l]; c.fill(); c.lineWidth = 6; c.strokeStyle = '#fff4e0'; c.stroke();
-      c.fillStyle = '#0b0d1a'; c.font = `800 ${Math.round(r * 0.9)}px Unbounded, "Arial Black", sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(String(2 ** (l - 1)), x, y + 2); };
-    ball(-140, 0, 2, 40); ball(-140, 80, 1, 34);
-    ball(30, 0, 3, 46); ball(30, 92, 2, 40); ball(30, 172, 1, 34);
-    ball(150, 0, 1, 34);
+    c.fillStyle = '#d9cfc0'; c.beginPath(); c.roundRect(-200, -6, 400, 22, 11); c.fill();
+    c.fillStyle = '#fff'; c.beginPath(); c.roundRect(-200, -14, 400, 22, 11); c.fill();
+    const b = (x, h, l, r) => this.ball(api, x, -14 - r - h, l, 1, c, r);
+    b(-140, 0, 2, 40); b(-140, 80, 1, 34);
+    b(30, 0, 3, 46); b(30, 92, 2, 40); b(30, 172, 1, 34);
+    b(150, 0, 1, 34);
     c.restore();
   },
 });

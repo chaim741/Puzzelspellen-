@@ -4,11 +4,11 @@ GAMES.push({
   pitch: 'Kies een naad. Het bord knijpt ernaartoe en gelijke tegels knallen.',
   controls: 'Swipe langs een lijn tussen de vakjes',
   rules: [
-    'Swipe omhoog of omlaag over een verticale lijn tussen twee kolommen, of naar links of rechts over een horizontale lijn.',
-    'Die lijn wordt de naad: de tegels links en rechts ervan (of boven en onder) komen tegen elkaar aan.',
-    'Gelijke tegels die tegenover elkaar komen te staan knallen weg. Beide kanten schuiven dan naar de naad en vanaf de rand komen nieuwe tegels.',
-    'Ontstaan er daarna weer paren aan de naad, dan krijg je een kettingreactie met extra punten.',
-    'Je hebt een beperkt aantal zetten. Meerdere paren in één keer geven zetten terug.',
+    { t: 'Kies een naad', d: 'Swipe langs een lijn tussen twee rijen of kolommen. Die lijn wordt de naad.' },
+    { t: 'Het bord knijpt samen', d: 'De tegels aan beide kanten van de naad schuiven tegen elkaar aan.' },
+    { t: 'Gelijke tegels knallen', d: 'Komen twee dezelfde tegels tegenover elkaar, dan knallen ze weg en schuiven er nieuwe in.' },
+    { t: 'Maak kettingen', d: 'Ontstaan er daarna weer paren aan de naad, dan gaat het door en krijg je extra punten.' },
+    { t: 'Let op je zetten', d: 'Je hebt een beperkt aantal zetten. Meerdere paren tegelijk geven zetten terug.' },
   ],
   why: 'Je kiest niet alleen een richting, maar ook waar de twee helften botsen.',
   start(api) {
@@ -111,21 +111,25 @@ GAMES.push({
   draw(api, now) {
     this.step(now);
     const G = api.grid(6, 6), { ctx } = api, cs = G.cs; G.bg();
-    ctx.save(); ctx.beginPath(); ctx.roundRect(G.ox, G.oy, 6 * cs, 6 * cs, cs * 0.2); ctx.clip();
-    for (const sp of this.sp.values()) {
+    // tiles slide in from outside the board, so they are clipped to it (with room for their shadow)
+    ctx.save(); ctx.beginPath(); ctx.roundRect(G.ox, G.oy - cs * 0.06, 6 * cs, 6 * cs + cs * 0.12, cs * 0.2); ctx.clip();
+    // draw back to front so lower tiles cover the shadows of the ones above
+    const sps = [...this.sp.values()].sort((a, b) => a.y - b.y);
+    for (const sp of sps) {
       ctx.globalAlpha = Math.max(0, Math.min(1, sp.a));
-      const x = G.x(sp.x), y = G.y(sp.y), w = cs * 0.8 * sp.sc;
-      api.rr(x - w / 2, y - w / 2, w, w, cs * 0.18, api.COLORS[sp.v] + '30');
-      api.shape(sp.v, x, y, cs * 0.22 * sp.sc, 'fill');
+      const x = G.x(sp.x), y = G.y(sp.y), w = cs * 0.84 * sp.sc;
+      const fy = api.block(x, y, w, api.COLORS[sp.v]);
+      api.shape(sp.v, x, fy, cs * 0.16 * sp.sc, 'emboss');
     }
     ctx.restore(); ctx.globalAlpha = 1;
     const seam = this.prev || (this.flash && now - this.flash.t < 450 ? this.flash : null);
     if (seam) {
-      ctx.strokeStyle = '#fff4e0'; ctx.lineWidth = cs * 0.08; ctx.lineCap = 'round'; ctx.globalAlpha = this.prev ? 0.8 : 1 - (now - seam.t) / 450;
+      ctx.globalAlpha = this.prev ? 0.9 : 1 - (now - seam.t) / 450; ctx.lineCap = 'round';
       ctx.beginPath();
-      if (seam.v) { ctx.moveTo(G.ox + seam.k * cs, G.oy); ctx.lineTo(G.ox + seam.k * cs, G.oy + 6 * cs); }
-      else { ctx.moveTo(G.ox, G.oy + seam.k * cs); ctx.lineTo(G.ox + 6 * cs, G.oy + seam.k * cs); }
-      ctx.stroke(); ctx.globalAlpha = 1;
+      if (seam.v) { ctx.moveTo(G.ox + seam.k * cs, G.oy + cs * 0.1); ctx.lineTo(G.ox + seam.k * cs, G.oy + 6 * cs - cs * 0.1); }
+      else { ctx.moveTo(G.ox + cs * 0.1, G.oy + seam.k * cs); ctx.lineTo(G.ox + 6 * cs - cs * 0.1, G.oy + seam.k * cs); }
+      ctx.strokeStyle = api.accent; ctx.lineWidth = cs * 0.13; ctx.stroke();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = cs * 0.045; ctx.stroke(); ctx.globalAlpha = 1;
     }
   },
 });
@@ -147,12 +151,15 @@ Object.assign(GAMES[GAMES.length - 1], {
     for (const y of [0, 2, 3, 5]) if (this.b[y][2].v === this.b[y][3].v) paint(3, y, (this.b[y][2].v + 2) % this.n);
     const hint = (api, now) => {
       const G = api.grid(6, 6), cs = G.cs, { ctx } = api, k = (now % 1400) / 1400, x = G.ox + 3 * cs;
-      ctx.globalAlpha = 0.5 + 0.5 * Math.sin(now / 180); ctx.strokeStyle = '#fff4e0'; ctx.lineWidth = cs * 0.08; ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.moveTo(x, G.oy + cs * 0.2); ctx.lineTo(x, G.oy + 6 * cs - cs * 0.2); ctx.stroke(); ctx.lineCap = 'butt';
-      for (const y of [1, 4]) api.rr(G.ox + 2 * cs + 3, G.oy + y * cs + 3, 2 * cs - 6, cs - 6, cs * 0.2, null, '#ffc93c', 3);
+      ctx.globalAlpha = 0.55 + 0.45 * Math.sin(now / 180); ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(x, G.oy + cs * 0.2); ctx.lineTo(x, G.oy + 6 * cs - cs * 0.2);
+      ctx.strokeStyle = api.accent; ctx.lineWidth = cs * 0.13; ctx.stroke(); ctx.strokeStyle = '#fff'; ctx.lineWidth = cs * 0.045; ctx.stroke(); ctx.lineCap = 'butt';
+      ctx.globalAlpha = 1;
+      for (const y of [1, 4]) api.rr(G.ox + 2 * cs + 2, G.oy + y * cs + 1, 2 * cs - 4, cs - 2, cs * 0.24, null, '#f2a01c', 4);
       const fy = G.oy + cs * (1 + 4 * EASEIO(Math.min(1, k * 1.4)));
       ctx.globalAlpha = k > 0.85 ? (1 - k) / 0.15 : 1;
-      ctx.beginPath(); ctx.arc(x, fy, cs * 0.28, 0, Math.PI * 2); ctx.fillStyle = '#fff4e0aa'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#fff4e0'; ctx.stroke();
+      ctx.beginPath(); ctx.arc(x, fy, cs * 0.28, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.shadowColor = 'rgba(40,30,60,.3)'; ctx.shadowBlur = 10; ctx.shadowOffsetY = 4; ctx.fill();
+      ctx.shadowColor = 'transparent'; ctx.lineWidth = 4; ctx.strokeStyle = api.accent; ctx.stroke();
       ctx.globalAlpha = 1;
     };
     return [
@@ -161,19 +168,20 @@ Object.assign(GAMES[GAMES.length - 1], {
       { text: 'Kies nu zelf een naad. Succes!', wait: 4000 },
     ];
   },
-  drawLogo(c, now) {
-    const g = c.createLinearGradient(0, 0, 0, 512); g.addColorStop(0, '#232a63'); g.addColorStop(1, '#0d1028');
+  drawLogo(c, now, api) {
+    const g = c.createLinearGradient(0, 0, 0, 512); g.addColorStop(0, '#fffdf8'); g.addColorStop(1, '#efe6d8');
     c.fillStyle = g; c.fillRect(0, 0, 512, 512);
-    const cols = ['#ff6b57', '#ffc93c', '#2fe0a0', '#48b8ff'], cs = 92, gap = 14 + 10 * (0.5 + 0.5 * Math.sin(now / 700));
+    // a 4x4 board split by a glowing seam; the two halves breathe toward each other
+    const cols = api.COLORS, cs = 96, gap = 20 + 12 * (0.5 + 0.5 * Math.sin(now / 700));
     const grid = [[0, 2, 1, 3], [3, 1, 1, 0], [2, 0, 3, 2], [1, 3, 0, 1]];
     for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) {
-      const side = x < 2 ? -1 : 1, px = 256 + (x - 2) * cs + side * gap / 2 + (side < 0 ? 0 : 0), py = 256 + (y - 2) * cs, v = grid[y][x];
-      const hot = y === 1 && (x === 1 || x === 2);
-      c.beginPath(); c.roundRect(px + 7, py + 7, cs - 14, cs - 14, 20); c.fillStyle = cols[v] + (hot ? '66' : '30'); c.fill();
-      c.beginPath(); c.arc(px + cs / 2, py + cs / 2, 22, 0, Math.PI * 2); c.fillStyle = cols[v]; c.fill(); c.lineWidth = 5; c.strokeStyle = '#fff4e0'; c.stroke();
+      const side = x < 2 ? -1 : 1, px = 256 + (x - 1.5) * cs + side * gap / 2, py = 262 + (y - 1.5) * cs, v = grid[y][x];
+      const fy = api.block(px, py, cs * 0.84, cols[v], cs * 0.22, c);
+      api.shape(v, px, fy, cs * 0.16, 'emboss', null, c);
     }
-    c.shadowColor = '#fff4e0'; c.shadowBlur = 30; c.strokeStyle = '#fff4e0'; c.lineWidth = 10; c.lineCap = 'round';
-    c.beginPath(); c.moveTo(256, 80); c.lineTo(256, 432); c.stroke(); c.shadowBlur = 0; c.lineCap = 'butt';
+    c.lineCap = 'round'; c.beginPath(); c.moveTo(256, 70); c.lineTo(256, 450);
+    c.strokeStyle = '#2f7df6'; c.lineWidth = 16; c.stroke(); c.strokeStyle = '#fff'; c.lineWidth = 6; c.stroke(); c.lineCap = 'butt';
   },
+
 });
 const EASEIO = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;

@@ -9,7 +9,7 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
 }
 const GAMES = [];
 const LAB = (() => {
-  const COLORS = ['#ff6b57', '#ffc93c', '#2fe0a0', '#48b8ff', '#c58cff', '#ff8fc7'];
+  const COLORS = ['#ef5b4c', '#f5a524', '#2dbf84', '#3b8cff', '#8b5cf6', '#ff6fa8'];
   const $ = id => document.getElementById(id);
   const cv = $('cv'), ctx = cv.getContext('2d'), stage = $('stage'), well = $('well');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -37,7 +37,10 @@ const LAB = (() => {
 
   // sound
   let ac = null;
-  function audio() { if (!soundOn) return null; try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); } catch { ac = null; } return ac; }
+  function audio() { if (!soundOn) return null; try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); if (ac.state !== 'running') ac.resume(); } catch { ac = null; } return ac; }
+  // iOS only lets sound start from the end of a tap; a silent blip on every tap keeps the audio unlocked
+  const unlock = () => { const a = audio(); if (!a) return; try { const b = a.createBuffer(1, 1, 22050), src = a.createBufferSource(); src.buffer = b; src.connect(a.destination); src.start(0); } catch {} };
+  for (const ev of ['touchend', 'pointerup', 'click']) addEventListener(ev, unlock, { passive: true, capture: true });
   function tone(freq, dur = 0.14, type = 'triangle', vol = 0.15, when = 0) {
     const a = audio(); if (!a) return;
     const t = a.currentTime + when, o = a.createOscillator(), g = a.createGain();
@@ -58,19 +61,43 @@ const LAB = (() => {
   };
 
   // drawing helpers
-  function shape(s, x, y, r, mode = 'fill', color) {
+  const hex = c => { const n = parseInt(c.slice(1, 7), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+  // mix a colour toward white (amt > 0) or toward a deep ink (amt < 0)
+  const shade = (c, amt) => { const [r, g, b] = hex(c), t = amt > 0 ? [255, 255, 255] : [40, 30, 60], k = Math.abs(amt); return `rgb(${Math.round(r + (t[0] - r) * k)},${Math.round(g + (t[1] - g) * k)},${Math.round(b + (t[2] - b) * k)})`; };
+  // a raised rounded block: soft shadow, darker side, lit face, a little gloss
+  function block(x, y, w, color, r = w * 0.24, c = ctx) {
+    const d = w * 0.09, h = w - d;
+    c.fillStyle = 'rgba(70,50,30,.16)'; c.beginPath(); c.roundRect(x - w / 2 + w * 0.04, y - h / 2 + d + w * 0.06, w - w * 0.08, h, r); c.fill();
+    c.fillStyle = shade(color, -0.28); c.beginPath(); c.roundRect(x - w / 2, y - h / 2 + d * 0.2, w, h + d * 0.8, r); c.fill();
+    const g = c.createLinearGradient(0, y - h / 2 - d * 0.4, 0, y + h / 2); g.addColorStop(0, shade(color, 0.2)); g.addColorStop(1, color);
+    c.fillStyle = g; c.beginPath(); c.roundRect(x - w / 2, y - h / 2 - d * 0.4, w, h, r); c.fill();
+    c.fillStyle = 'rgba(255,255,255,.28)'; c.beginPath(); c.roundRect(x - w / 2 + w * 0.12, y - h / 2 - d * 0.4 + w * 0.07, w * 0.76, h * 0.26, r * 0.6); c.fill();
+    return y - d * 0.4;
+  }
+  // a glossy ball lit from the top left
+  function ball(x, y, r, color, c = ctx) {
+    c.fillStyle = 'rgba(70,50,30,.18)'; c.beginPath(); c.ellipse(x + r * 0.08, y + r * 0.92, r * 0.78, r * 0.2, 0, 0, Math.PI * 2); c.fill();
+    const g = c.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.1, x, y, r);
+    g.addColorStop(0, shade(color, 0.45)); g.addColorStop(0.55, color); g.addColorStop(1, shade(color, -0.3));
+    c.fillStyle = g; c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill();
+    c.fillStyle = 'rgba(255,255,255,.55)'; c.beginPath(); c.ellipse(x - r * 0.32, y - r * 0.45, r * 0.32, r * 0.18, -0.6, 0, Math.PI * 2); c.fill();
+  }
+  function shape(s, x, y, r, mode = 'fill', color, c2 = ctx) {
     const c = color || COLORS[s % COLORS.length];
-    ctx.beginPath();
+    c2.beginPath();
     const k = s % 6;
-    if (k === 0) ctx.arc(x, y, r, 0, Math.PI * 2);
-    else if (k === 1) { const h = r * 1.15; ctx.moveTo(x, y - h); ctx.lineTo(x + h * 0.95, y + h * 0.62); ctx.lineTo(x - h * 0.95, y + h * 0.62); ctx.closePath(); }
-    else if (k === 2) ctx.roundRect(x - r * 0.88, y - r * 0.88, r * 1.76, r * 1.76, r * 0.3);
-    else if (k === 3) { const h = r * 1.2; ctx.moveTo(x, y - h); ctx.lineTo(x + h, y); ctx.lineTo(x, y + h); ctx.lineTo(x - h, y); ctx.closePath(); }
-    else if (k === 4) { for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.5 : r * 1.15; ctx[i ? 'lineTo' : 'moveTo'](x + Math.cos(a) * rr, y + Math.sin(a) * rr); } ctx.closePath(); }
-    else { for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; ctx[i ? 'lineTo' : 'moveTo'](x + Math.cos(a) * r * 1.05, y + Math.sin(a) * r * 1.05); } ctx.closePath(); }
-    if (mode === 'fill') {
-      ctx.fillStyle = c; ctx.fill(); ctx.lineWidth = Math.max(1.5, r * 0.16); ctx.strokeStyle = '#fff4e0'; ctx.lineJoin = 'round'; ctx.stroke();
-    } else { ctx.lineWidth = Math.max(2, r * 0.32); ctx.strokeStyle = c; ctx.lineJoin = 'round'; ctx.stroke(); }
+    if (k === 0) c2.arc(x, y, r, 0, Math.PI * 2);
+    else if (k === 1) { const h = r * 1.15; c2.moveTo(x, y - h); c2.lineTo(x + h * 0.95, y + h * 0.62); c2.lineTo(x - h * 0.95, y + h * 0.62); c2.closePath(); }
+    else if (k === 2) c2.roundRect(x - r * 0.88, y - r * 0.88, r * 1.76, r * 1.76, r * 0.3);
+    else if (k === 3) { const h = r * 1.2; c2.moveTo(x, y - h); c2.lineTo(x + h, y); c2.lineTo(x, y + h); c2.lineTo(x - h, y); c2.closePath(); }
+    else if (k === 4) { for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.5 : r * 1.15; c2[i ? 'lineTo' : 'moveTo'](x + Math.cos(a) * rr, y + Math.sin(a) * rr); } c2.closePath(); }
+    else { for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; c2[i ? 'lineTo' : 'moveTo'](x + Math.cos(a) * r * 1.05, y + Math.sin(a) * r * 1.05); } c2.closePath(); }
+    if (mode === 'emboss') {
+      c2.fillStyle = '#fff'; c2.shadowColor = 'rgba(40,30,60,.3)'; c2.shadowOffsetY = r * 0.14; c2.shadowBlur = r * 0.2; c2.fill();
+      c2.shadowColor = 'transparent'; c2.shadowOffsetY = 0; c2.shadowBlur = 0; c2.lineJoin = 'round'; c2.lineWidth = r * 0.12; c2.strokeStyle = '#fff'; c2.stroke();
+    } else if (mode === 'fill') {
+      c2.fillStyle = c; c2.fill(); c2.lineWidth = Math.max(1.5, r * 0.16); c2.strokeStyle = '#fff'; c2.lineJoin = 'round'; c2.stroke();
+    } else { c2.lineWidth = Math.max(2, r * 0.32); c2.strokeStyle = c; c2.lineJoin = 'round'; c2.stroke(); }
   }
   function rr(x, y, w, h, r, fill, stroke, lw = 1) {
     ctx.beginPath(); ctx.roundRect(x, y, w, h, r);
@@ -87,8 +114,11 @@ const LAB = (() => {
       cell(px, py) { const c = Math.floor((px - ox) / cs), r = Math.floor((py - oy) / cs); return c >= 0 && r >= 0 && c < cols && r < rows ? { c, r } : null; },
       cellF(px, py) { return { c: (px - ox) / cs, r: (py - oy) / cs }; },
       bg(danger) {
-        for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++)
-          rr(ox + c * cs + cs * 0.05, oy + r * cs + cs * 0.05, cs * 0.9, cs * 0.9, cs * 0.16, danger ? '#2a1e3a' : '#1c2142');
+        for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+          const x = ox + c * cs + cs * 0.06, y = oy + r * cs + cs * 0.06, w = cs * 0.88;
+          rr(x, y, w, w, cs * 0.2, danger ? '#ecc9c2' : '#dcd2c3');
+          rr(x, y + cs * 0.05, w, w - cs * 0.05, cs * 0.2, danger ? '#f3d8d2' : '#e6ddcf');
+        }
       },
     };
   }
@@ -108,13 +138,15 @@ const LAB = (() => {
 
 
   const fmt = n => n.toLocaleString('nl-NL');
+  const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
   const bestKey = () => daily ? 'daily_' + today() : 'best';
   function hud() {
     $('score').textContent = fmt(score);
     $('best').textContent = fmt(Math.max(store.get(bestKey(), 0), score));
   }
   const api = {
-    get W() { return W; }, ctx, COLORS, shape, rr, grid, burst, float, banner, shake, tone, note, buzz, reduce,
+    get W() { return W; }, ctx, COLORS, shape, rr, grid, shade, block, ball, burst, float, banner, shake, tone, note, buzz, reduce,
+    get accent() { return cssVar('--accent'); },
     get score() { return score; },
     add(n, x, y, size) { if (!n) return; score += Math.round(n); hud(); if (x != null) float('+' + Math.round(n), x, y, size); },
     info(t) { $('info').textContent = t || ''; },
@@ -182,6 +214,7 @@ const LAB = (() => {
     const d = store.get('daily_' + today(), null);
     $('homeDaily').textContent = d == null ? '–' : fmt(d);
     $('dailyDate').textContent = d == null ? 'nog niet gespeeld' : 'bekijk je score';
+    $('dailyDay').textContent = new Date().getDate();
   }
   // time until the next daily puzzle
   function untilTomorrow() { const n = new Date(), m = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1), t = Math.max(0, m - n); return `${Math.floor(t / 3600000)} u ${Math.floor(t / 60000) % 60} min`; }
@@ -239,6 +272,7 @@ const LAB = (() => {
   document.addEventListener('touchmove', e => { if (!e.target.closest || !e.target.closest('.sheet')) e.preventDefault(); }, { passive: false });
   const KEYS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
   addEventListener('keydown', e => {
+    if (!$('rulesSheet').hidden) { if (e.key === 'Escape') setRules(false); return; }
     if (!$('sheet').hidden) { if (e.key === 'Escape') setSheet(false); return; }
     if (!$('dailySheet').hidden) { if (e.key === 'Escape') dailyResult(false); return; }
     if (!playing) return;
@@ -262,7 +296,8 @@ const LAB = (() => {
     tutStep();
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, W);
     if (shakeAmt > 0.3 && !reduce) { ctx.translate((Math.random() - 0.5) * shakeAmt, (Math.random() - 0.5) * shakeAmt); shakeAmt *= 0.84; } else shakeAmt = 0;
-    rr(0, 0, W, W, 22, '#141833');
+    const tray = ctx.createLinearGradient(0, 0, 0, W); tray.addColorStop(0, '#fffdf9'); tray.addColorStop(1, '#f3ece2');
+    rr(0, 0, W, W, 26, tray);
     cur.draw(api, now, dt);
     if (tut && tut.steps[tut.i] && tut.steps[tut.i].hint && !ended) tut.steps[tut.i].hint(api, now);
     fx = fx.filter(f => (f.life += dt) < f.max);
@@ -274,10 +309,10 @@ const LAB = (() => {
       else {
         ctx.globalAlpha = k < 0.7 ? 1 : 1 - (k - 0.7) / 0.3;
         const big = f.k === 'banner', size = big ? W * 0.058 : W * 0.05 * f.size;
-        ctx.font = `800 ${Math.round(size)}px Unbounded, "Arial Black", sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.font = `700 ${Math.round(size * 1.15)}px Fredoka, "Arial Rounded MT Bold", sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
         const x = big ? W / 2 : f.x, y = big ? W * 0.1 : f.y - W * 0.08 * (1 - Math.pow(1 - k, 3));
-        ctx.lineWidth = size * 0.22; ctx.strokeStyle = '#0b0d1a'; ctx.strokeText(f.text, x, y);
-        ctx.fillStyle = big ? '#ffc93c' : '#fff4e0'; ctx.fillText(f.text, x, y);
+        ctx.lineWidth = size * 0.32; ctx.strokeStyle = '#fff'; ctx.strokeText(f.text, x, y);
+        ctx.fillStyle = big ? '#f2a01c' : '#2b2540'; ctx.fillText(f.text, x, y);
       }
       ctx.globalAlpha = 1;
     }
@@ -294,6 +329,7 @@ const LAB = (() => {
   }
 
   function setSheet(open) { $('sheet').hidden = !open; if (open) $('closeSet').focus({ preventScroll: true }); }
+  function setRules(open) { $('rulesSheet').hidden = !open; if (open) $('closeRules').focus({ preventScroll: true }); }
   function syncSwitches() { $('sndSw').setAttribute('aria-checked', String(soundOn)); $('vibSw').setAttribute('aria-checked', String(vibOn)); }
 
   let APPNAME = '';
@@ -302,7 +338,8 @@ const LAB = (() => {
     soundOn = store.get('sound', true); vibOn = store.get('vib', true); syncSwitches();
     $('appPitch').textContent = app.pitch; $('ctl').textContent = cur.controls;
     $('dailyDate').textContent = '';
-    cur.rules.forEach(r => { const li = document.createElement('li'); li.textContent = r; $('rules').appendChild(li); });
+    // each rule is a small card: a short title and one or two lines
+    cur.rules.forEach(r => { const li = document.createElement('li'), b = document.createElement('b'), sp = document.createElement('span'); b.textContent = r.t; sp.textContent = r.d; li.append(b, sp); $('rules').appendChild(li); });
     const tapThen = f => e => { f(); e.currentTarget.blur(); };
     $('playBtn').onclick = tapThen(() => play(false));
     $('dailyBtn').onclick = tapThen(() => play(true));
@@ -319,6 +356,11 @@ const LAB = (() => {
     $('sndSw').onclick = () => { soundOn = !soundOn; store.set('sound', soundOn); syncSwitches(); if (soundOn) tone(523, 0.1); };
     $('vibSw').onclick = () => { vibOn = !vibOn; store.set('vib', vibOn); syncSwitches(); buzz(20); };
     $('tutBtn').onclick = () => { setSheet(false); daily = false; show('play'); start(true); };
+    $('helpBtn').onclick = () => setRules(true);
+    $('rulesBtn').onclick = () => { setSheet(false); setRules(true); };
+    $('closeRules').onclick = () => setRules(false);
+    $('rulesSheet').onclick = e => { if (e.target.id === 'rulesSheet') setRules(false); };
+    $('rulesPlay').onclick = () => { setRules(false); if (!playing) play(false); };
     show('home');
     // the very first time you open the app you go straight into the tutorial
     if (!store.get('tutDone', false)) play(false);
