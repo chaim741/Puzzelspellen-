@@ -1,0 +1,745 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>SeamShift</title>
+<meta name="theme-color" content="#0b0d1a">
+<link rel="stylesheet" href="fonts.css">
+<style>
+/* App shell: a home screen, a play screen and a settings sheet. One game per app; the screens fill the phone without page scroll. */
+:root {
+  color-scheme: dark;
+  --ink: #0b0d1a; --deep: #141833; --cell: #1c2142; --line: #2a3060;
+  --day: #fff4e0; --night: #7f8cff; --text: #eef0ff; --muted: #9aa0c8; --gold: #ffc93c; --danger: #ff6b57; --accent: #48b8ff;
+  --display: "Unbounded", "Arial Black", system-ui, sans-serif;
+  --body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --st: env(safe-area-inset-top, 0px); --sb: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: radial-gradient(120% 70% at 50% 0%, #1a1f45 0%, var(--ink) 62%) fixed, var(--ink);
+  color: var(--text); font-family: var(--body); overscroll-behavior: none; overflow: hidden;
+  -webkit-user-select: none; user-select: none;
+}
+.screen {
+  position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center;
+  padding: calc(var(--st) + 14px) max(16px, env(safe-area-inset-right, 0px)) calc(var(--sb) + 16px) max(16px, env(safe-area-inset-left, 0px));
+  transition: opacity .25s ease, transform .25s ease;
+}
+.screen[hidden] { display: flex; opacity: 0; pointer-events: none; transform: scale(.98); }
+.col { width: min(100%, 460px); display: flex; flex-direction: column; }
+button {
+  font: 700 15px var(--body); color: var(--text); background: var(--deep); border: 1px solid var(--line);
+  border-radius: 999px; padding: 12px 18px; cursor: pointer; white-space: nowrap; touch-action: manipulation;
+}
+button:active { transform: scale(.97); }
+button:focus-visible { outline: 2px solid var(--day); outline-offset: 2px; }
+.go { background: var(--day); color: var(--ink); border: 0; font-family: var(--display); font-weight: 700; font-size: 17px; padding: 16px 26px; }
+.alt { background: color-mix(in srgb, var(--accent) 18%, var(--deep)); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+.icon-btn { width: 44px; height: 44px; padding: 0; display: grid; place-items: center; font-size: 20px; flex: none; }
+
+/* home */
+#home .col { flex: 1; justify-content: space-between; gap: 18px; }
+.home-top { display: flex; justify-content: flex-end; }
+.hero { display: flex; flex-direction: column; align-items: center; gap: 18px; text-align: center; }
+#logo { width: min(46vw, 190px); aspect-ratio: 1; border-radius: 22%; box-shadow: 0 18px 50px -10px color-mix(in srgb, var(--accent) 45%, transparent); }
+.hero h1 { font-family: var(--display); font-weight: 800; font-size: clamp(30px, 10vw, 44px); letter-spacing: -0.03em; margin: 0; line-height: 1; }
+.hero p { margin: 0; color: var(--muted); font-size: 15px; max-width: 30ch; line-height: 1.4; }
+.menu { display: grid; gap: 10px; }
+.menu button { width: 100%; }
+.daily { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.daily small { font: 600 13px var(--body); color: var(--muted); }
+.records { display: flex; gap: 10px; justify-content: center; }
+.rec { flex: 1; background: var(--deep); border: 1px solid var(--line); border-radius: 16px; padding: 10px 12px; text-align: center; }
+.rec span { display: block; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.rec b { font-family: var(--display); font-size: 20px; font-variant-numeric: tabular-nums; }
+
+/* play */
+#play .col { flex: 1; gap: 10px; align-items: stretch; }
+.bar { display: flex; align-items: center; gap: 10px; }
+.bar .mode { flex: 1; min-width: 0; font: 700 13px var(--body); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar .mode b { color: var(--accent); }
+.stats { display: flex; gap: 6px; }
+.stat { background: var(--deep); border: 1px solid var(--line); border-radius: 12px; padding: 5px 10px; min-width: 64px; text-align: right; }
+.stat b { display: block; font-family: var(--display); font-weight: 700; font-size: 17px; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 9px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
+.info { min-height: 20px; text-align: center; color: var(--gold); font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; }
+.well { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; }
+.stage { position: relative; width: min(100%, 460px); aspect-ratio: 1; touch-action: none; }
+.stage.fit { width: auto; height: 100%; max-width: 100%; }
+canvas { width: 100%; height: 100%; display: block; border-radius: 22px; }
+.coach {
+  pointer-events: none;
+  background: color-mix(in srgb, var(--ink) 88%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 60%, var(--line));
+  border-radius: 14px; padding: 10px 14px; font-size: 15px; font-weight: 600; line-height: 1.35; text-align: center;
+  transition: opacity .3s ease, transform .3s ease;
+}
+.coach[hidden] { display: none; }
+.overlay {
+  position: absolute; inset: 0; z-index: 3; border-radius: 22px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px; text-align: center; padding: 22px;
+  background: color-mix(in srgb, var(--ink) 86%, transparent); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+}
+.overlay[hidden] { display: none; }
+.overlay h2 { font-family: var(--display); font-weight: 800; font-size: clamp(20px, 6vw, 28px); margin: 0; }
+.overlay .big { font-family: var(--display); font-weight: 800; font-size: clamp(42px, 14vw, 64px); line-height: 1; font-variant-numeric: tabular-nums; }
+.overlay p { margin: 0; color: var(--muted); font-size: 14px; max-width: 30ch; }
+.overlay .row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.new { color: var(--gold); }
+.foot { display: flex; justify-content: space-between; gap: 8px; }
+.foot .ctl { align-self: center; font-size: 13px; color: var(--muted); text-align: center; flex: 1; }
+
+/* settings sheet */
+.sheet-bg { position: fixed; inset: 0; z-index: 20; background: #0008; display: flex; align-items: flex-end; justify-content: center; transition: opacity .2s ease; }
+.sheet-bg[hidden] { display: flex; opacity: 0; pointer-events: none; }
+.sheet {
+  width: min(100%, 480px); max-height: 86dvh; overflow: auto; background: var(--deep); border: 1px solid var(--line); border-bottom: 0;
+  border-radius: 22px 22px 0 0; padding: 18px 18px calc(var(--sb) + 18px); display: grid; gap: 14px;
+  transition: transform .25s ease; -webkit-user-select: text; user-select: text;
+}
+.sheet-bg[hidden] .sheet { transform: translateY(30px); }
+.sheet h3 { font-family: var(--display); font-size: 18px; margin: 0; }
+.sheet-head { display: flex; justify-content: space-between; align-items: center; }
+.toggle { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-weight: 600; font-size: 16px; }
+.switch { width: 52px; height: 30px; padding: 0; border-radius: 999px; position: relative; background: var(--line); border: 0; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: var(--day); transition: transform .2s ease; }
+.switch[aria-checked="true"] { background: var(--accent); }
+.switch[aria-checked="true"]::after { transform: translateX(22px); }
+.sheet ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 14px; line-height: 1.45; }
+.sheet .small { font-size: 12px; color: var(--muted); margin: 0; }
+.daily-res { text-align: center; }
+.daily-res .small { font-size: 14px; }
+.ds-score { font-family: var(--display); font-weight: 800; font-size: 56px; line-height: 1; color: var(--accent); font-variant-numeric: tabular-nums; }
+button:disabled { opacity: .45; }
+[hidden]#restartBtn { display: none; }
+@media (prefers-reduced-motion: reduce) { .screen, .sheet, .coach, .sheet-bg { transition: none; } }
+</style>
+</head>
+<body>
+
+
+<section class="screen" id="home">
+  <div class="col">
+    <div class="home-top"><button class="icon-btn" id="setBtn1" aria-label="Instellingen">⚙︎</button></div>
+    <div class="hero">
+      <canvas id="logo" aria-hidden="true"></canvas>
+      <h1 id="appName">SeamShift</h1>
+      <p id="appPitch"></p>
+    </div>
+    <div class="menu">
+      <div class="records">
+        <div class="rec"><span>Record</span><b id="homeBest">0</b></div>
+        <div class="rec"><span>Dagpuzzel</span><b id="homeDaily">–</b></div>
+      </div>
+      <button class="go" id="playBtn">Spelen</button>
+      <button class="alt daily" id="dailyBtn"><span>Dagpuzzel</span><small id="dailyDate"></small></button>
+    </div>
+  </div>
+</section>
+
+<section class="screen" id="play" hidden>
+  <div class="col">
+    <div class="bar">
+      <button class="icon-btn" id="homeBtn" aria-label="Naar start">←</button>
+      <div class="mode" id="mode"></div>
+      <div class="stats">
+        <div class="stat"><span>Score</span><b id="score">0</b></div>
+        <div class="stat"><span>Record</span><b id="best">0</b></div>
+      </div>
+    </div>
+    <div class="info" id="info"></div>
+    <div class="coach" id="coach" hidden></div>
+    <div class="well" id="well">
+      <div class="stage" id="stage">
+        <canvas id="cv" aria-label="Speelveld"></canvas>
+        <div class="overlay" id="over" hidden>
+          <h2 id="overTitle">Einde</h2>
+          <div class="big" id="finalScore">0</div>
+          <p id="overText"></p>
+          <div class="row"><button class="go" id="againBtn">Nog een keer</button><button id="toHomeBtn">Naar start</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="foot">
+      <button id="restartBtn">Opnieuw</button>
+      <span class="ctl" id="ctl"></span>
+      <button class="icon-btn" id="setBtn2" aria-label="Instellingen">⚙︎</button>
+    </div>
+  </div>
+</section>
+
+<div class="sheet-bg" id="dailySheet" hidden>
+  <div class="sheet daily-res" role="dialog" aria-modal="true" aria-labelledby="dsTitle">
+    <div class="sheet-head"><h3 id="dsTitle">Dagpuzzel</h3><button class="icon-btn" id="dsClose" aria-label="Sluiten">✕</button></div>
+    <p class="small">Je hebt de dagpuzzel van vandaag gespeeld. Je score:</p>
+    <div class="ds-score" id="dsScore">0</div>
+    <p class="small" id="dsNext"></p>
+    <button class="go" id="dsShare">Deel je score</button>
+  </div>
+</div>
+
+<div class="sheet-bg" id="sheet" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+    <div class="sheet-head"><h3 id="setTitle">Instellingen</h3><button class="icon-btn" id="closeSet" aria-label="Sluiten">✕</button></div>
+    <div class="toggle"><span>Geluid</span><button class="switch" id="sndSw" role="switch" aria-checked="true" aria-label="Geluid"></button></div>
+    <div class="toggle"><span>Trillen</span><button class="switch" id="vibSw" role="switch" aria-checked="true" aria-label="Trillen"></button></div>
+    <button id="tutBtn">Uitleg opnieuw spelen</button>
+    <h3>Spelregels</h3>
+    <ol id="rules"></ol>
+    <p class="small">Je scores worden alleen op dit toestel bewaard.</p>
+  </div>
+</div>
+<script>
+// ---------- App framework: one game, home / play / settings, daily puzzle, first-play tutorial ----------
+const GAMES = [];
+const LAB = (() => {
+  const COLORS = ['#ff6b57', '#ffc93c', '#2fe0a0', '#48b8ff', '#c58cff', '#ff8fc7'];
+  const $ = id => document.getElementById(id);
+  const cv = $('cv'), ctx = cv.getContext('2d'), stage = $('stage'), well = $('well');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let P = 'app';
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(P + '_' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem(P + '_' + k, JSON.stringify(v)); } catch {} },
+  };
+  let W = 0, dpr = 1, cur = null, fx = [], shakeAmt = 0, score = 0, ended = false, playing = false;
+  let soundOn = true, vibOn = true, daily = false, tut = null;
+
+  // the board is the largest square that fits the space between the top bar and the buttons
+  function resize() {
+    const r = well.getBoundingClientRect(), s = Math.max(200, Math.floor(Math.min(r.width, r.height, 460)));
+    stage.style.width = s + 'px'; stage.style.height = s + 'px';
+    dpr = Math.min(devicePixelRatio || 1, 3); W = s; cv.width = Math.round(W * dpr); cv.height = Math.round(W * dpr);
+  }
+  new ResizeObserver(resize).observe(well);
+
+  // seeded randomness so everyone gets the same daily puzzle
+  let rng = Math.random;
+  const seeded = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+  const hash = s => { let h = 2166136261; for (const c of s) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return h >>> 0; };
+
+  // sound
+  let ac = null;
+  function audio() { if (!soundOn) return null; try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); } catch { ac = null; } return ac; }
+  function tone(freq, dur = 0.14, type = 'triangle', vol = 0.15, when = 0) {
+    const a = audio(); if (!a) return;
+    const t = a.currentTime + when, o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(a.destination); o.start(t); o.stop(t + dur + 0.02);
+  }
+  const SCALE = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24];
+  const note = k => 392 * Math.pow(2, SCALE[Math.max(0, Math.min(k, SCALE.length - 1))] / 12);
+  // in the store app the phone's own haptics are used (they also work on iPhone); in a browser, vibrate where supported
+  const buzz = p => {
+    if (!vibOn) return;
+    const hp = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Haptics;
+    try {
+      if (hp) { if (Array.isArray(p)) hp.notification({ type: 'WARNING' }); else hp.impact({ style: p >= 20 ? 'MEDIUM' : 'LIGHT' }); return; }
+      navigator.vibrate && navigator.vibrate(p);
+    } catch {}
+  };
+
+  // drawing helpers
+  function shape(s, x, y, r, mode = 'fill', color) {
+    const c = color || COLORS[s % COLORS.length];
+    ctx.beginPath();
+    const k = s % 6;
+    if (k === 0) ctx.arc(x, y, r, 0, Math.PI * 2);
+    else if (k === 1) { const h = r * 1.15; ctx.moveTo(x, y - h); ctx.lineTo(x + h * 0.95, y + h * 0.62); ctx.lineTo(x - h * 0.95, y + h * 0.62); ctx.closePath(); }
+    else if (k === 2) ctx.roundRect(x - r * 0.88, y - r * 0.88, r * 1.76, r * 1.76, r * 0.3);
+    else if (k === 3) { const h = r * 1.2; ctx.moveTo(x, y - h); ctx.lineTo(x + h, y); ctx.lineTo(x, y + h); ctx.lineTo(x - h, y); ctx.closePath(); }
+    else if (k === 4) { for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.5 : r * 1.15; ctx[i ? 'lineTo' : 'moveTo'](x + Math.cos(a) * rr, y + Math.sin(a) * rr); } ctx.closePath(); }
+    else { for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; ctx[i ? 'lineTo' : 'moveTo'](x + Math.cos(a) * r * 1.05, y + Math.sin(a) * r * 1.05); } ctx.closePath(); }
+    if (mode === 'fill') {
+      ctx.fillStyle = c; ctx.fill(); ctx.lineWidth = Math.max(1.5, r * 0.16); ctx.strokeStyle = '#fff4e0'; ctx.lineJoin = 'round'; ctx.stroke();
+    } else { ctx.lineWidth = Math.max(2, r * 0.32); ctx.strokeStyle = c; ctx.lineJoin = 'round'; ctx.stroke(); }
+  }
+  function rr(x, y, w, h, r, fill, stroke, lw = 1) {
+    ctx.beginPath(); ctx.roundRect(x, y, w, h, r);
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw; ctx.stroke(); }
+  }
+  // grid fitted into the square board
+  function grid(cols, rows, padF = 0.035) {
+    const pad = W * padF, cs = (W - 2 * pad) / Math.max(cols, rows);
+    const ox = (W - cs * cols) / 2, oy = (W - cs * rows) / 2;
+    return {
+      cols, rows, cs, ox, oy,
+      x: c => ox + (c + 0.5) * cs, y: r => oy + (r + 0.5) * cs,
+      cell(px, py) { const c = Math.floor((px - ox) / cs), r = Math.floor((py - oy) / cs); return c >= 0 && r >= 0 && c < cols && r < rows ? { c, r } : null; },
+      cellF(px, py) { return { c: (px - ox) / cs, r: (py - oy) / cs }; },
+      bg(danger) {
+        for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++)
+          rr(ox + c * cs + cs * 0.05, oy + r * cs + cs * 0.05, cs * 0.9, cs * 0.9, cs * 0.16, danger ? '#2a1e3a' : '#1c2142');
+      },
+    };
+  }
+
+  // effects (pixel coordinates in board space)
+  function burst(x, y, color, n = 12, power = 1) {
+    fx.push({ k: 'ring', x, y, c: color, life: 0, max: 420, r: W * 0.05 * power });
+    const parts = reduce ? 4 : n;
+    for (let i = 0; i < parts; i++) {
+      const a = Math.random() * Math.PI * 2, s = (0.5 + Math.random() * 1.6) * W * 0.004 * power;
+      fx.push({ k: 'dot', x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, c: color, life: 0, max: 400 + Math.random() * 300 });
+    }
+  }
+  const float = (text, x, y, size = 1) => fx.push({ k: 'text', text, x, y, size, life: 0, max: 900 });
+  const banner = text => fx.push({ k: 'banner', text, life: 0, max: 1200 });
+  const shake = a => { shakeAmt = Math.max(shakeAmt, a); };
+
+
+  const fmt = n => n.toLocaleString('nl-NL');
+  const bestKey = () => daily ? 'daily_' + today() : 'best';
+  function hud() {
+    $('score').textContent = fmt(score);
+    $('best').textContent = fmt(Math.max(store.get(bestKey(), 0), score));
+  }
+  const api = {
+    get W() { return W; }, ctx, COLORS, shape, rr, grid, burst, float, banner, shake, tone, note, buzz, reduce,
+    get score() { return score; },
+    add(n, x, y, size) { if (!n) return; score += Math.round(n); hud(); if (x != null) float('+' + Math.round(n), x, y, size); },
+    info(t) { $('info').textContent = t || ''; },
+    over(reason) {
+      if (ended) return; ended = true;
+      const prev = store.get(bestKey(), 0), isBest = score > prev;
+      if (isBest) store.set(bestKey(), score);
+      if (!daily) store.set('games', store.get('games', 0) + 1);
+      const close = !daily && !isBest && prev > 0 && score >= prev * 0.8;
+      tone(330, 0.25, 'sine', 0.14); tone(220, 0.45, 'sine', 0.14, 0.18); buzz([30, 60, 30]);
+      setTimeout(() => {
+        if (!ended || !playing) return;
+        coach(null);
+        $('overTitle').textContent = daily ? 'Dagpuzzel klaar' : isBest && score > 0 ? 'Nieuw record!' : close ? 'Bijna!' : 'Einde';
+        $('overTitle').classList.toggle('new', (isBest && score > 0) || close);
+        $('finalScore').textContent = fmt(score);
+        // how far from the record: the "almost" feeling that makes you try again
+        const gap = !daily && !isBest && prev > 0 ? ` Nog ${fmt(prev - score + 1)} punten tot je record.` : '';
+        $('overText').textContent = (reason || '') + gap + (daily ? ' Morgen staat er een nieuwe dagpuzzel klaar.' : '');
+        $('againBtn').textContent = daily ? 'Deel je score' : 'Nog een keer';
+        // the buttons wait a moment so a last tap in the game doesn't press them by accident
+        const bs = [$('againBtn'), $('toHomeBtn')]; bs.forEach(b => b.disabled = true);
+        setTimeout(() => { bs.forEach(b => b.disabled = false); $('againBtn').focus({ preventScroll: true }); }, 650);
+        $('over').hidden = false;
+      }, 600);
+    },
+    get ended() { return ended; },
+    get daily() { return daily; },
+    rand: () => rng(),
+    rnd: n => Math.floor(rng() * n),
+  };
+
+  // first-play tutorial: the game gives steps {text, hint(api, now), done(), wait}
+  function coach(text) { const c = $('coach'); if (text) c.textContent = text; c.hidden = !text; }
+  function tutStep() {
+    if (!tut) return;
+    const st = tut.steps[tut.i];
+    if (!st) { tut = null; coach(null); store.set('tutDone', true); return; }
+    if (tut.shown !== tut.i) { tut.shown = tut.i; tut.t0 = performance.now(); coach(st.text); }
+    if (st.done ? st.done() : performance.now() - tut.t0 > (st.wait || 4000)) { tut.i++; }
+  }
+
+  function start(withTut) {
+    score = 0; ended = false; fx = []; shakeAmt = 0;
+    $('over').hidden = true; api.info(''); coach(null);
+    rng = daily ? seeded(hash(today() + cur.id)) : Math.random;
+    $('mode').innerHTML = daily ? `<b>Dagpuzzel</b> · ${new Date().toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })}` : '';
+    cur.start(api);
+    // the very first game starts on a friendlier board (same rules)
+    if (!daily && store.get('games', 0) === 0 && cur.friendly) cur.friendly(api);
+    $('restartBtn').hidden = daily;
+    if (daily) store.set(bestKey(), store.get(bestKey(), 0));
+    tut = withTut && cur.tutorial ? { steps: cur.tutorial(api), i: 0, shown: -1 } : null;
+    hud();
+  }
+  function show(id) {
+    // leaving the daily puzzle halfway still uses up today's try
+    if (id === 'home' && playing && daily && !ended) store.set(bestKey(), Math.max(store.get(bestKey(), 0), score));
+    for (const s of ['home', 'play']) $(s).hidden = s !== id;
+    playing = id === 'play';
+    if (id === 'home') refreshHome(); else requestAnimationFrame(resize);
+  }
+  function refreshHome() {
+    $('homeBest').textContent = fmt(store.get('best', 0));
+    const d = store.get('daily_' + today(), null);
+    $('homeDaily').textContent = d == null ? '–' : fmt(d);
+    $('dailyDate').textContent = d == null ? 'nog niet gespeeld' : 'bekijk je score';
+  }
+  // time until the next daily puzzle
+  function untilTomorrow() { const n = new Date(), m = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1), t = Math.max(0, m - n); return `${Math.floor(t / 3600000)} u ${Math.floor(t / 60000) % 60} min`; }
+  const dateLabel = () => new Date().toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' });
+  async function shareDaily(btn) {
+    const sc = store.get('daily_' + today(), 0);
+    const text = `${APPNAME} · dagpuzzel ${dateLabel()}\n${fmt(sc)} punten\nKun jij het beter?`;
+    try { if (navigator.share) { await navigator.share({ text }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+    try { await navigator.clipboard.writeText(text); const t = btn.textContent; btn.textContent = 'Gekopieerd!'; setTimeout(() => btn.textContent = t, 1800); } catch {}
+  }
+  let dailyTimer = 0;
+  function dailyResult(open) {
+    clearInterval(dailyTimer); $('dailySheet').hidden = !open; if (!open) return;
+    $('dsTitle').textContent = 'Dagpuzzel ' + dateLabel();
+    $('dsScore').textContent = fmt(store.get('daily_' + today(), 0));
+    const tick = () => $('dsNext').textContent = 'Nieuwe puzzel over ' + untilTomorrow(); tick(); dailyTimer = setInterval(tick, 20000);
+  }
+  function play(isDaily) {
+    if (isDaily && store.get('daily_' + today(), null) != null) return dailyResult(true);
+    audio(); daily = isDaily; show('play');
+    start(!isDaily && !store.get('tutDone', false));
+  }
+
+  // input: tap, swipe (with start point), raw down/move/up
+  let ptr = null;
+  const local = e => { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * W / r.height }; };
+  stage.addEventListener('pointerdown', e => {
+    if (!$('over').hidden || ended || !playing) return;
+    audio(); const p = local(e);
+    ptr = { id: e.pointerId, sx: p.x, sy: p.y, t: performance.now(), swiped: false };
+    try { stage.setPointerCapture(e.pointerId); } catch {}
+    cur.down && cur.down(p);
+  });
+  stage.addEventListener('pointermove', e => {
+    if (!playing) return;
+    const p = local(e);
+    if (!ptr) { cur.hover && cur.hover(p); return; }
+    if (e.pointerId !== ptr.id) return;
+    cur.move && cur.move(p);
+    if (!ptr.swiped && cur.swipe) {
+      const dx = p.x - ptr.sx, dy = p.y - ptr.sy;
+      if (Math.hypot(dx, dy) > Math.max(22, W * 0.06)) { ptr.swiped = true; cur.swipe(dirOf(dx, dy), { x: ptr.sx, y: ptr.sy }, { dx, dy }); }
+    }
+  });
+  const dirOf = (dx, dy) => Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
+  function up(e) {
+    if (!ptr || e.pointerId !== ptr.id) return;
+    const p = local(e), moved = Math.hypot(p.x - ptr.sx, p.y - ptr.sy);
+    const wasSwipe = ptr.swiped; ptr = null;
+    if (cur.up) cur.up(p, moved);
+    if (!wasSwipe && moved < Math.max(14, W * 0.04) && cur.tap) cur.tap(p);
+  }
+  stage.addEventListener('pointerup', up);
+  stage.addEventListener('pointercancel', e => { ptr = null; cur.up && cur.up(local(e), 0, true); });
+  document.addEventListener('touchmove', e => { if (!e.target.closest || !e.target.closest('.sheet')) e.preventDefault(); }, { passive: false });
+  const KEYS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
+  addEventListener('keydown', e => {
+    if (!$('sheet').hidden) { if (e.key === 'Escape') setSheet(false); return; }
+    if (!$('dailySheet').hidden) { if (e.key === 'Escape') dailyResult(false); return; }
+    if (!playing) return;
+    if (e.key === 'Escape') { show('home'); return; }
+    if (e.target.tagName === 'BUTTON' && (e.key === ' ' || e.key === 'Enter')) return;
+    if (!$('over').hidden) { if ((e.key === 'Enter' || e.key === ' ') && !daily && !$('againBtn').disabled) { e.preventDefault(); start(false); } return; }
+    if (ended) return;
+    if (cur.key && cur.key(e.key) === true) { e.preventDefault(); return; }
+    if (KEYS[e.key] && cur.swipe) { e.preventDefault(); audio(); cur.swipe(KEYS[e.key], null, null); }
+    else if (e.key === ' ' && cur.action) { e.preventDefault(); audio(); cur.action(); }
+  });
+
+  // main loop
+  let last = performance.now();
+  function frame(now) {
+    requestAnimationFrame(frame);
+    const dt = Math.min(50, now - last); last = now;
+    if (cur && cur.drawLogo && !playing) drawLogo(now);
+    if (!W || !cur || !playing) return;
+    if (cur.update && !ended) cur.update(dt, now);
+    tutStep();
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, W);
+    if (shakeAmt > 0.3 && !reduce) { ctx.translate((Math.random() - 0.5) * shakeAmt, (Math.random() - 0.5) * shakeAmt); shakeAmt *= 0.84; } else shakeAmt = 0;
+    rr(0, 0, W, W, 22, '#141833');
+    cur.draw(api, now, dt);
+    if (tut && tut.steps[tut.i] && tut.steps[tut.i].hint && !ended) tut.steps[tut.i].hint(api, now);
+    fx = fx.filter(f => (f.life += dt) < f.max);
+    for (const f of fx) {
+      const k = f.life / f.max;
+      ctx.globalAlpha = 1 - k;
+      if (f.k === 'ring') { ctx.strokeStyle = f.c; ctx.lineWidth = f.r * 0.3 * (1 - k); ctx.beginPath(); ctx.arc(f.x, f.y, f.r * (0.6 + 2 * (1 - Math.pow(1 - k, 3))), 0, Math.PI * 2); ctx.stroke(); }
+      else if (f.k === 'dot') { f.x += f.vx * dt / 16; f.y += f.vy * dt / 16; f.vy += 0.03 * W / 400; f.vx *= 0.97; ctx.fillStyle = f.c; ctx.beginPath(); ctx.arc(f.x, f.y, W * 0.009 * (1 - k * 0.6), 0, Math.PI * 2); ctx.fill(); }
+      else {
+        ctx.globalAlpha = k < 0.7 ? 1 : 1 - (k - 0.7) / 0.3;
+        const big = f.k === 'banner', size = big ? W * 0.058 : W * 0.05 * f.size;
+        ctx.font = `800 ${Math.round(size)}px Unbounded, "Arial Black", sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        const x = big ? W / 2 : f.x, y = big ? W * 0.1 : f.y - W * 0.08 * (1 - Math.pow(1 - k, 3));
+        ctx.lineWidth = size * 0.22; ctx.strokeStyle = '#0b0d1a'; ctx.strokeText(f.text, x, y);
+        ctx.fillStyle = big ? '#ffc93c' : '#fff4e0'; ctx.fillText(f.text, x, y);
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+
+  // the home-screen logo is the app icon, drawn live by the game
+  const lg = $('logo'), lctx = lg.getContext('2d');
+  function drawLogo(now) {
+    const s = lg.clientWidth; if (!s) return;
+    const d = Math.min(devicePixelRatio || 1, 3); if (lg.width !== Math.round(s * d)) { lg.width = lg.height = Math.round(s * d); }
+    lctx.setTransform(lg.width / 512, 0, 0, lg.width / 512, 0, 0); lctx.clearRect(0, 0, 512, 512);
+    cur.drawLogo(lctx, now, api);
+  }
+
+  function setSheet(open) { $('sheet').hidden = !open; if (open) $('closeSet').focus({ preventScroll: true }); }
+  function syncSwitches() { $('sndSw').setAttribute('aria-checked', String(soundOn)); $('vibSw').setAttribute('aria-checked', String(vibOn)); }
+
+  let APPNAME = '';
+  function boot(app) {
+    P = app.key; cur = GAMES[0]; APPNAME = app.name;
+    soundOn = store.get('sound', true); vibOn = store.get('vib', true); syncSwitches();
+    $('appPitch').textContent = app.pitch; $('ctl').textContent = cur.controls;
+    $('dailyDate').textContent = '';
+    cur.rules.forEach(r => { const li = document.createElement('li'); li.textContent = r; $('rules').appendChild(li); });
+    const tapThen = f => e => { f(); e.currentTarget.blur(); };
+    $('playBtn').onclick = tapThen(() => play(false));
+    $('dailyBtn').onclick = tapThen(() => play(true));
+    $('homeBtn').onclick = tapThen(() => show('home'));
+    $('toHomeBtn').onclick = tapThen(() => show('home'));
+    $('againBtn').onclick = e => { if (daily) shareDaily(e.currentTarget); else { start(false); e.currentTarget.blur(); } };
+    $('dsShare').onclick = e => shareDaily(e.currentTarget);
+    $('dsClose').onclick = () => dailyResult(false);
+    $('dailySheet').onclick = e => { if (e.target.id === 'dailySheet') dailyResult(false); };
+    $('restartBtn').onclick = tapThen(() => start(false));
+    $('setBtn1').onclick = $('setBtn2').onclick = () => setSheet(true);
+    $('closeSet').onclick = () => setSheet(false);
+    $('sheet').onclick = e => { if (e.target.id === 'sheet') setSheet(false); };
+    $('sndSw').onclick = () => { soundOn = !soundOn; store.set('sound', soundOn); syncSwitches(); if (soundOn) tone(523, 0.1); };
+    $('vibSw').onclick = () => { vibOn = !vibOn; store.set('vib', vibOn); syncSwitches(); buzz(20); };
+    $('tutBtn').onclick = () => { setSheet(false); daily = false; show('play'); start(true); };
+    show('home');
+    // the very first time you open the app you go straight into the tutorial
+    if (!store.get('tutDone', false)) play(false);
+    requestAnimationFrame(frame);
+  }
+  return { boot, api };
+})();
+// ---------- shared small helpers for games ----------
+const H = {
+  dirv: { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] },
+  make(c, r, f) { return Array.from({ length: r }, (_, y) => Array.from({ length: c }, (_, x) => f(x, y))); },
+  // groups of equal values (4-neighbour), returns array of [ [x,y],... ]
+  groups(b, minSize, same = (a, c) => a != null && a === c) {
+    const R = b.length, C = b[0].length, seen = H.make(C, R, () => false), out = [];
+    for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
+      if (seen[y][x] || b[y][x] == null) continue;
+      const v = b[y][x], st = [[x, y]], g = []; seen[y][x] = true;
+      while (st.length) {
+        const [cx, cy] = st.pop(); g.push([cx, cy]);
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nx = cx + dx, ny = cy + dy;
+          if (nx < 0 || ny < 0 || nx >= C || ny >= R || seen[ny][nx] || !same(v, b[ny][nx])) continue;
+          seen[ny][nx] = true; st.push([nx, ny]);
+        }
+      }
+      if (g.length >= minSize) out.push(g);
+    }
+    return out;
+  },
+  // straight lines of >= n equal values; returns set of "x,y"
+  lines(b, n, ok = v => v != null && v >= 0) {
+    const R = b.length, C = b[0].length, hit = new Set();
+    for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
+      const v = b[y][x]; if (!ok(v)) continue;
+      for (const [dx, dy] of [[1, 0], [0, 1]]) {
+        let k = 1; while (x + dx * k < C && y + dy * k < R && b[y + dy * k][x + dx * k] === v) k++;
+        if (k >= n) for (let i = 0; i < k; i++) hit.add((x + dx * i) + ',' + (y + dy * i));
+      }
+    }
+    return hit;
+  },
+  gravity(b, isFixed = () => false) { // drop non-null down, returns nothing
+    const R = b.length, C = b[0].length;
+    for (let x = 0; x < C; x++) {
+      for (let y = R - 1; y >= 0; y--) {
+        if (b[y][x] != null || isFixed(b[y][x])) continue;
+        let k = y - 1; while (k >= 0 && b[k][x] == null) k--;
+        if (k >= 0 && !isFixed(b[k][x])) { b[y][x] = b[k][x]; b[k][x] = null; }
+      }
+    }
+  },
+  combo: wave => [1, 1.5, 2, 3, 4, 5][Math.min(wave, 5)],
+};
+
+// ---------- 2. SeamShift ----------
+GAMES.push({
+  id: 'seamshift', name: 'SeamShift',
+  pitch: 'Kies een naad. Het bord knijpt ernaartoe en gelijke tegels knallen.',
+  controls: 'Swipe langs een lijn tussen de vakjes',
+  rules: [
+    'Swipe omhoog of omlaag over een verticale lijn tussen twee kolommen, of naar links of rechts over een horizontale lijn.',
+    'Die lijn wordt de naad: de tegels links en rechts ervan (of boven en onder) komen tegen elkaar aan.',
+    'Gelijke tegels die tegenover elkaar komen te staan knallen weg. Beide kanten schuiven dan naar de naad en vanaf de rand komen nieuwe tegels.',
+    'Ontstaan er daarna weer paren aan de naad, dan krijg je een kettingreactie met extra punten.',
+    'Je hebt een beperkt aantal zetten. Meerdere paren in één keer geven zetten terug.',
+  ],
+  why: 'Je kiest niet alleen een richting, maar ook waar de twee helften botsen.',
+  start(api) {
+    this.n = 4; this.nid = 1; this.sp = new Map();
+    this.b = H.make(6, 6, (x, y) => this.tile(api.rnd(this.n), x, y));
+    this.moves = 18; this.flash = null; this.prev = null; this.phases = []; this.ph = null; this.queued = null;
+    this.hud(api);
+  },
+  tile(v, x, y, fromX = x, fromY = y, a = 1) {
+    const t = { id: this.nid++, v };
+    this.sp.set(t.id, { v, x: fromX, y: fromY, sc: 1, a });
+    return t;
+  },
+  hud(api) { api.info(`Nog ${this.moves} zetten`); },
+  seamFrom(dir, p) {
+    const G = LAB.api.grid(6, 6), f = p ? G.cellF(p.x, p.y) : { c: 3, r: 3 };
+    if (dir === 'up' || dir === 'down') return { v: true, k: Math.max(1, Math.min(5, Math.round(f.c))) };
+    return { v: false, k: Math.max(1, Math.min(5, Math.round(f.r))) };
+  },
+  down(p) { this.prev = null; this.sp0 = p; },
+  move(p) { if (!this.sp0) return; const dx = p.x - this.sp0.x, dy = p.y - this.sp0.y; if (Math.hypot(dx, dy) > 10) this.prev = this.seamFrom(Math.abs(dx) > Math.abs(dy) ? 'left' : 'up', this.sp0); },
+  up() { this.prev = null; this.sp0 = null; },
+
+  // queue an animation phase: tweens is a list of [sprite, {x,y,sc,a}] targets
+  phase(dur, onStart, ease = 'out') { this.phases.push({ dur, onStart, ease }); },
+  swipe(dir, p) {
+    const api = LAB.api;
+    if (this.ph || this.phases.length) { this.queued = [dir, p]; return; }
+    const s = this.seamFrom(dir, p), b = this.b, G = api.grid(6, 6);
+    this.flash = { ...s, t: performance.now() };
+    // view helpers: line i runs across the seam, j is the position along it
+    const xy = (i, j) => s.v ? [j, i] : [i, j];
+    const get = (i, j) => { const [x, y] = xy(i, j); return b[y][x]; };
+    const set = (i, j, t) => { const [x, y] = xy(i, j); b[y][x] = t; };
+    const half = s.v ? [0.5, 0] : [0, 0.5];
+    let wave = 0, total = 0, pairs = 0;
+    this.moves--;
+    // every wave: tiles at the seam collide, matches pop, both sides close the gap, new tiles slide in from the edge
+    while (wave < 8) {
+      const hit = [];
+      for (let i = 0; i < 6; i++) if (get(i, s.k - 1).v === get(i, s.k).v) hit.push(i);
+      if (!wave && !hit.length) {
+        // no match: a little bump so you can see the two sides meet
+        const pairsAll = [...Array(6).keys()].map(i => [get(i, s.k - 1), get(i, s.k)]);
+        this.phase(90, () => pairsAll.map(([l, r]) => { const a = this.sp.get(l.id), c = this.sp.get(r.id); return [[a, { x: a.x + half[0] * 0.3, y: a.y + half[1] * 0.3 }], [c, { x: c.x - half[0] * 0.3, y: c.y - half[1] * 0.3 }]]; }).flat());
+        this.phase(160, () => pairsAll.map(([l, r]) => { const a = this.sp.get(l.id), c = this.sp.get(r.id); return [[a, { x: Math.round(a.x), y: Math.round(a.y) }], [c, { x: Math.round(c.x), y: Math.round(c.y) }]]; }).flat(), 'back');
+        this.phase(1, () => { api.tone(150, 0.1, 'sine', 0.08); api.shake(3); return []; });
+        break;
+      }
+      if (!hit.length) break;
+      const popped = [], moves = [], spawns = [];
+      for (const i of hit) {
+        const L = get(i, s.k - 1), R = get(i, s.k); popped.push([L, R, i]);
+        for (let j = s.k - 1; j > 0; j--) { set(i, j, get(i, j - 1)); moves.push([get(i, j), xy(i, j)]); }
+        const [x0, y0] = xy(i, 0), [ox, oy] = xy(i, -1), tl = this.tile(api.rnd(this.n), x0, y0, ox, oy, 0); set(i, 0, tl); spawns.push([tl, x0, y0]);
+        for (let j = s.k; j < 5; j++) { set(i, j, get(i, j + 1)); moves.push([get(i, j), xy(i, j)]); }
+        const [x5, y5] = xy(i, 5), [ex, ey] = xy(i, 6), tr = this.tile(api.rnd(this.n), x5, y5, ex, ey, 0); set(i, 5, tr); spawns.push([tr, x5, y5]);
+      }
+      const pts = (10 * hit.length + hit.length * hit.length * 5) * H.combo(wave);
+      total += pts; pairs += hit.length;
+      const w = wave;
+      // 1) the matching pairs slide into each other at the seam
+      this.phase(130, () => popped.flatMap(([L, R, i]) => { const [mx, my] = xy(i, s.k - 0.5); return [[this.sp.get(L.id), { x: mx, y: my }], [this.sp.get(R.id), { x: mx, y: my }]]; }), 'in');
+      // 2) they pop
+      this.phase(170, () => {
+        popped.forEach(([L, , i], k) => { const [mx, my] = xy(i, s.k - 0.5); api.burst(G.x(mx), G.y(my), api.COLORS[L.v], 14); });
+        const [cx, cy] = xy(popped[0][2], s.k - 0.5);
+        api.add(pts, G.x(cx), G.y(cy), 1 + w * 0.15);
+        api.tone(api.note(w * 2 + hit.length), 0.18); api.buzz(10); api.shake(2 + w * 2 + hit.length);
+        if (w >= 1) api.banner('Ketting ×' + (w + 1));
+        return popped.flatMap(([L, R]) => [[this.sp.get(L.id), { sc: 1.6, a: 0 }], [this.sp.get(R.id), { sc: 1.6, a: 0 }]]);
+      });
+      // 3) both sides close the gap and new tiles drop in from the edges
+      this.phase(260, () => {
+        popped.forEach(([L, R]) => { this.sp.delete(L.id); this.sp.delete(R.id); });
+        return [...moves.map(([t, [x, y]]) => [this.sp.get(t.id), { x, y }]), ...spawns.map(([t, x, y]) => [this.sp.get(t.id), { x, y, a: 1 }])];
+      }, 'back');
+      this.phase(70, () => []);
+      wave++;
+    }
+    if (total) { const bonus = Math.min(3, Math.floor(total / 60)); if (bonus) this.moves += bonus; }
+    this.phase(1, () => { this.hud(api); if (this.moves <= 0) api.over('Je zetten zijn op.'); return []; });
+  },
+  step(now) {
+    while (true) {
+      if (!this.ph) {
+        const nx = this.phases.shift();
+        if (!nx) { if (this.queued && !LAB.api.ended) { const [d, p] = this.queued; this.queued = null; this.swipe(d, p); continue; } return; }
+        const tw = (nx.onStart() || []).filter(([sp]) => sp).map(([sp, to]) => ({ sp, from: { x: sp.x, y: sp.y, sc: sp.sc, a: sp.a }, to }));
+        this.ph = { ...nx, tw, t0: now, dur: LAB.api.reduce ? Math.min(nx.dur, 40) : nx.dur };
+      }
+      const ph = this.ph, t = Math.min(1, (now - ph.t0) / ph.dur);
+      const e = ph.ease === 'in' ? t * t : ph.ease === 'back' ? 1 + 2.2 * Math.pow(t - 1, 3) + 1.2 * Math.pow(t - 1, 2) : 1 - Math.pow(1 - t, 3);
+      for (const { sp, from, to } of ph.tw) for (const k in to) sp[k] = from[k] + (to[k] - from[k]) * e;
+      if (t < 1) return;
+      for (const { sp, to } of ph.tw) Object.assign(sp, to);
+      this.ph = null;
+    }
+  },
+  draw(api, now) {
+    this.step(now);
+    const G = api.grid(6, 6), { ctx } = api, cs = G.cs; G.bg();
+    ctx.save(); ctx.beginPath(); ctx.roundRect(G.ox, G.oy, 6 * cs, 6 * cs, cs * 0.2); ctx.clip();
+    for (const sp of this.sp.values()) {
+      ctx.globalAlpha = Math.max(0, Math.min(1, sp.a));
+      const x = G.x(sp.x), y = G.y(sp.y), w = cs * 0.8 * sp.sc;
+      api.rr(x - w / 2, y - w / 2, w, w, cs * 0.18, api.COLORS[sp.v] + '30');
+      api.shape(sp.v, x, y, cs * 0.22 * sp.sc, 'fill');
+    }
+    ctx.restore(); ctx.globalAlpha = 1;
+    const seam = this.prev || (this.flash && now - this.flash.t < 450 ? this.flash : null);
+    if (seam) {
+      ctx.strokeStyle = '#fff4e0'; ctx.lineWidth = cs * 0.08; ctx.lineCap = 'round'; ctx.globalAlpha = this.prev ? 0.8 : 1 - (now - seam.t) / 450;
+      ctx.beginPath();
+      if (seam.v) { ctx.moveTo(G.ox + seam.k * cs, G.oy); ctx.lineTo(G.ox + seam.k * cs, G.oy + 6 * cs); }
+      else { ctx.moveTo(G.ox, G.oy + seam.k * cs); ctx.lineTo(G.ox + 6 * cs, G.oy + seam.k * cs); }
+      ctx.stroke(); ctx.globalAlpha = 1;
+    }
+  },
+});
+
+// ---------- app extras: first-play tutorial and the logo ----------
+Object.assign(GAMES[GAMES.length - 1], {
+  // first game: of a handful of random boards, keep the one with the most ready pairs at its seams
+  friendly(api) {
+    const pairs = () => { let n = 0; for (let k = 1; k < 6; k++) for (let i = 0; i < 6; i++) { if (this.b[i][k - 1].v === this.b[i][k].v) n++; if (this.b[k - 1][i].v === this.b[k][i].v) n++; } return n; };
+    let best = this.b, bestSp = this.sp, bn = pairs();
+    for (let t = 0; t < 40; t++) { this.start(api); const n = pairs(); if (n > bn) { bn = n; best = this.b; bestSp = this.sp; } }
+    this.b = best; this.sp = bestSp; this.hud(api);
+  },
+  tutorial(api) {
+    // make sure a swipe along the middle line gives two pairs
+    const paint = (x, y, v) => { const t = this.b[y][x]; t.v = v; this.sp.get(t.id).v = v; };
+    const a = this.b[1][2].v, c = (a + 1) % this.n;
+    paint(3, 1, a); paint(2, 4, c); paint(3, 4, c);
+    for (const y of [0, 2, 3, 5]) if (this.b[y][2].v === this.b[y][3].v) paint(3, y, (this.b[y][2].v + 2) % this.n);
+    const hint = (api, now) => {
+      const G = api.grid(6, 6), cs = G.cs, { ctx } = api, k = (now % 1400) / 1400, x = G.ox + 3 * cs;
+      ctx.globalAlpha = 0.5 + 0.5 * Math.sin(now / 180); ctx.strokeStyle = '#fff4e0'; ctx.lineWidth = cs * 0.08; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(x, G.oy + cs * 0.2); ctx.lineTo(x, G.oy + 6 * cs - cs * 0.2); ctx.stroke(); ctx.lineCap = 'butt';
+      for (const y of [1, 4]) api.rr(G.ox + 2 * cs + 3, G.oy + y * cs + 3, 2 * cs - 6, cs - 6, cs * 0.2, null, '#ffc93c', 3);
+      const fy = G.oy + cs * (1 + 4 * EASEIO(Math.min(1, k * 1.4)));
+      ctx.globalAlpha = k > 0.85 ? (1 - k) / 0.15 : 1;
+      ctx.beginPath(); ctx.arc(x, fy, cs * 0.28, 0, Math.PI * 2); ctx.fillStyle = '#fff4e0aa'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#fff4e0'; ctx.stroke();
+      ctx.globalAlpha = 1;
+    };
+    return [
+      { text: 'Swipe omlaag langs de lichtende lijn.', hint, done: () => api.score > 0 },
+      { text: 'Gelijke tegels botsen en knallen weg.', wait: 4500 },
+      { text: 'Kies nu zelf een naad. Succes!', wait: 4000 },
+    ];
+  },
+  drawLogo(c, now) {
+    const g = c.createLinearGradient(0, 0, 0, 512); g.addColorStop(0, '#232a63'); g.addColorStop(1, '#0d1028');
+    c.fillStyle = g; c.fillRect(0, 0, 512, 512);
+    const cols = ['#ff6b57', '#ffc93c', '#2fe0a0', '#48b8ff'], cs = 92, gap = 14 + 10 * (0.5 + 0.5 * Math.sin(now / 700));
+    const grid = [[0, 2, 1, 3], [3, 1, 1, 0], [2, 0, 3, 2], [1, 3, 0, 1]];
+    for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) {
+      const side = x < 2 ? -1 : 1, px = 256 + (x - 2) * cs + side * gap / 2 + (side < 0 ? 0 : 0), py = 256 + (y - 2) * cs, v = grid[y][x];
+      const hot = y === 1 && (x === 1 || x === 2);
+      c.beginPath(); c.roundRect(px + 7, py + 7, cs - 14, cs - 14, 20); c.fillStyle = cols[v] + (hot ? '66' : '30'); c.fill();
+      c.beginPath(); c.arc(px + cs / 2, py + cs / 2, 22, 0, Math.PI * 2); c.fillStyle = cols[v]; c.fill(); c.lineWidth = 5; c.strokeStyle = '#fff4e0'; c.stroke();
+    }
+    c.shadowColor = '#fff4e0'; c.shadowBlur = 30; c.strokeStyle = '#fff4e0'; c.lineWidth = 10; c.lineCap = 'round';
+    c.beginPath(); c.moveTo(256, 80); c.lineTo(256, 432); c.stroke(); c.shadowBlur = 0; c.lineCap = 'butt';
+  },
+});
+const EASEIO = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+LAB.boot({ key: 'seamapp', name: 'SeamShift', pitch: 'Kies een naad, laat het bord samenknijpen en laat gelijke tegels knallen.' });
+</script>
+
+</body>
+</html>

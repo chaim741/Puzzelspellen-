@@ -1,0 +1,189 @@
+<title>__TITLE__</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#0b0d1a">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Figtree:wght@400;600;700&display=swap">
+<style>
+/* App shell: a home screen, a play screen and a settings sheet. One game per app; the screens fill the phone without page scroll. */
+:root {
+  color-scheme: dark;
+  --ink: #0b0d1a; --deep: #141833; --cell: #1c2142; --line: #2a3060;
+  --day: #fff4e0; --night: #7f8cff; --text: #eef0ff; --muted: #9aa0c8; --gold: #ffc93c; --danger: #ff6b57; --accent: __ACCENT__;
+  --display: "Unbounded", "Arial Black", system-ui, sans-serif;
+  --body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --st: env(safe-area-inset-top, 0px); --sb: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: radial-gradient(120% 70% at 50% 0%, #1a1f45 0%, var(--ink) 62%) fixed, var(--ink);
+  color: var(--text); font-family: var(--body); overscroll-behavior: none; overflow: hidden;
+  -webkit-user-select: none; user-select: none;
+}
+.screen {
+  position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center;
+  padding: calc(var(--st) + 14px) max(16px, env(safe-area-inset-right, 0px)) calc(var(--sb) + 16px) max(16px, env(safe-area-inset-left, 0px));
+  transition: opacity .25s ease, transform .25s ease;
+}
+.screen[hidden] { display: flex; opacity: 0; pointer-events: none; transform: scale(.98); }
+.col { width: min(100%, 460px); display: flex; flex-direction: column; }
+button {
+  font: 700 15px var(--body); color: var(--text); background: var(--deep); border: 1px solid var(--line);
+  border-radius: 999px; padding: 12px 18px; cursor: pointer; white-space: nowrap; touch-action: manipulation;
+}
+button:active { transform: scale(.97); }
+button:focus-visible { outline: 2px solid var(--day); outline-offset: 2px; }
+.go { background: var(--day); color: var(--ink); border: 0; font-family: var(--display); font-weight: 700; font-size: 17px; padding: 16px 26px; }
+.alt { background: color-mix(in srgb, var(--accent) 18%, var(--deep)); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+.icon-btn { width: 44px; height: 44px; padding: 0; display: grid; place-items: center; font-size: 20px; flex: none; }
+
+/* home */
+#home .col { flex: 1; justify-content: space-between; gap: 18px; }
+.home-top { display: flex; justify-content: flex-end; }
+.hero { display: flex; flex-direction: column; align-items: center; gap: 18px; text-align: center; }
+#logo { width: min(46vw, 190px); aspect-ratio: 1; border-radius: 22%; box-shadow: 0 18px 50px -10px color-mix(in srgb, var(--accent) 45%, transparent); }
+.hero h1 { font-family: var(--display); font-weight: 800; font-size: clamp(30px, 10vw, 44px); letter-spacing: -0.03em; margin: 0; line-height: 1; }
+.hero p { margin: 0; color: var(--muted); font-size: 15px; max-width: 30ch; line-height: 1.4; }
+.menu { display: grid; gap: 10px; }
+.menu button { width: 100%; }
+.daily { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.daily small { font: 600 13px var(--body); color: var(--muted); }
+.records { display: flex; gap: 10px; justify-content: center; }
+.rec { flex: 1; background: var(--deep); border: 1px solid var(--line); border-radius: 16px; padding: 10px 12px; text-align: center; }
+.rec span { display: block; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.rec b { font-family: var(--display); font-size: 20px; font-variant-numeric: tabular-nums; }
+
+/* play */
+#play .col { flex: 1; gap: 10px; align-items: stretch; }
+.bar { display: flex; align-items: center; gap: 10px; }
+.bar .mode { flex: 1; min-width: 0; font: 700 13px var(--body); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar .mode b { color: var(--accent); }
+.stats { display: flex; gap: 6px; }
+.stat { background: var(--deep); border: 1px solid var(--line); border-radius: 12px; padding: 5px 10px; min-width: 64px; text-align: right; }
+.stat b { display: block; font-family: var(--display); font-weight: 700; font-size: 17px; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 9px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
+.info { min-height: 20px; text-align: center; color: var(--gold); font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; }
+.well { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; }
+.stage { position: relative; width: min(100%, 460px); aspect-ratio: 1; touch-action: none; }
+.stage.fit { width: auto; height: 100%; max-width: 100%; }
+canvas { width: 100%; height: 100%; display: block; border-radius: 22px; }
+.coach {
+  pointer-events: none;
+  background: color-mix(in srgb, var(--ink) 88%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 60%, var(--line));
+  border-radius: 14px; padding: 10px 14px; font-size: 15px; font-weight: 600; line-height: 1.35; text-align: center;
+  transition: opacity .3s ease, transform .3s ease;
+}
+.coach[hidden] { display: none; }
+.overlay {
+  position: absolute; inset: 0; z-index: 3; border-radius: 22px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px; text-align: center; padding: 22px;
+  background: color-mix(in srgb, var(--ink) 86%, transparent); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+}
+.overlay[hidden] { display: none; }
+.overlay h2 { font-family: var(--display); font-weight: 800; font-size: clamp(20px, 6vw, 28px); margin: 0; }
+.overlay .big { font-family: var(--display); font-weight: 800; font-size: clamp(42px, 14vw, 64px); line-height: 1; font-variant-numeric: tabular-nums; }
+.overlay p { margin: 0; color: var(--muted); font-size: 14px; max-width: 30ch; }
+.overlay .row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.new { color: var(--gold); }
+.foot { display: flex; justify-content: space-between; gap: 8px; }
+.foot .ctl { align-self: center; font-size: 13px; color: var(--muted); text-align: center; flex: 1; }
+
+/* settings sheet */
+.sheet-bg { position: fixed; inset: 0; z-index: 20; background: #0008; display: flex; align-items: flex-end; justify-content: center; transition: opacity .2s ease; }
+.sheet-bg[hidden] { display: flex; opacity: 0; pointer-events: none; }
+.sheet {
+  width: min(100%, 480px); max-height: 86dvh; overflow: auto; background: var(--deep); border: 1px solid var(--line); border-bottom: 0;
+  border-radius: 22px 22px 0 0; padding: 18px 18px calc(var(--sb) + 18px); display: grid; gap: 14px;
+  transition: transform .25s ease; -webkit-user-select: text; user-select: text;
+}
+.sheet-bg[hidden] .sheet { transform: translateY(30px); }
+.sheet h3 { font-family: var(--display); font-size: 18px; margin: 0; }
+.sheet-head { display: flex; justify-content: space-between; align-items: center; }
+.toggle { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-weight: 600; font-size: 16px; }
+.switch { width: 52px; height: 30px; padding: 0; border-radius: 999px; position: relative; background: var(--line); border: 0; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: var(--day); transition: transform .2s ease; }
+.switch[aria-checked="true"] { background: var(--accent); }
+.switch[aria-checked="true"]::after { transform: translateX(22px); }
+.sheet ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 14px; line-height: 1.45; }
+.sheet .small { font-size: 12px; color: var(--muted); margin: 0; }
+.daily-res { text-align: center; }
+.daily-res .small { font-size: 14px; }
+.ds-score { font-family: var(--display); font-weight: 800; font-size: 56px; line-height: 1; color: var(--accent); font-variant-numeric: tabular-nums; }
+button:disabled { opacity: .45; }
+[hidden]#restartBtn { display: none; }
+@media (prefers-reduced-motion: reduce) { .screen, .sheet, .coach, .sheet-bg { transition: none; } }
+</style>
+
+<section class="screen" id="home">
+  <div class="col">
+    <div class="home-top"><button class="icon-btn" id="setBtn1" aria-label="Instellingen">⚙︎</button></div>
+    <div class="hero">
+      <canvas id="logo" aria-hidden="true"></canvas>
+      <h1 id="appName">__TITLE__</h1>
+      <p id="appPitch"></p>
+    </div>
+    <div class="menu">
+      <div class="records">
+        <div class="rec"><span>Record</span><b id="homeBest">0</b></div>
+        <div class="rec"><span>Dagpuzzel</span><b id="homeDaily">–</b></div>
+      </div>
+      <button class="go" id="playBtn">Spelen</button>
+      <button class="alt daily" id="dailyBtn"><span>Dagpuzzel</span><small id="dailyDate"></small></button>
+    </div>
+  </div>
+</section>
+
+<section class="screen" id="play" hidden>
+  <div class="col">
+    <div class="bar">
+      <button class="icon-btn" id="homeBtn" aria-label="Naar start">←</button>
+      <div class="mode" id="mode"></div>
+      <div class="stats">
+        <div class="stat"><span>Score</span><b id="score">0</b></div>
+        <div class="stat"><span>Record</span><b id="best">0</b></div>
+      </div>
+    </div>
+    <div class="info" id="info"></div>
+    <div class="coach" id="coach" hidden></div>
+    <div class="well" id="well">
+      <div class="stage" id="stage">
+        <canvas id="cv" aria-label="Speelveld"></canvas>
+        <div class="overlay" id="over" hidden>
+          <h2 id="overTitle">Einde</h2>
+          <div class="big" id="finalScore">0</div>
+          <p id="overText"></p>
+          <div class="row"><button class="go" id="againBtn">Nog een keer</button><button id="toHomeBtn">Naar start</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="foot">
+      <button id="restartBtn">Opnieuw</button>
+      <span class="ctl" id="ctl"></span>
+      <button class="icon-btn" id="setBtn2" aria-label="Instellingen">⚙︎</button>
+    </div>
+  </div>
+</section>
+
+<div class="sheet-bg" id="dailySheet" hidden>
+  <div class="sheet daily-res" role="dialog" aria-modal="true" aria-labelledby="dsTitle">
+    <div class="sheet-head"><h3 id="dsTitle">Dagpuzzel</h3><button class="icon-btn" id="dsClose" aria-label="Sluiten">✕</button></div>
+    <p class="small">Je hebt de dagpuzzel van vandaag gespeeld. Je score:</p>
+    <div class="ds-score" id="dsScore">0</div>
+    <p class="small" id="dsNext"></p>
+    <button class="go" id="dsShare">Deel je score</button>
+  </div>
+</div>
+
+<div class="sheet-bg" id="sheet" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+    <div class="sheet-head"><h3 id="setTitle">Instellingen</h3><button class="icon-btn" id="closeSet" aria-label="Sluiten">✕</button></div>
+    <div class="toggle"><span>Geluid</span><button class="switch" id="sndSw" role="switch" aria-checked="true" aria-label="Geluid"></button></div>
+    <div class="toggle"><span>Trillen</span><button class="switch" id="vibSw" role="switch" aria-checked="true" aria-label="Trillen"></button></div>
+    <button id="tutBtn">Uitleg opnieuw spelen</button>
+    <h3>Spelregels</h3>
+    <ol id="rules"></ol>
+    <p class="small">Je scores worden alleen op dit toestel bewaard.</p>
+  </div>
+</div>
+<script>
