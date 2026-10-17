@@ -9,22 +9,29 @@ GAMES.push({
     { t: 'Gelijke gewichten smelten', d: 'Twee gelijke gewichten op elkaar worden één gewicht dat twee keer zo zwaar is.' },
     { t: 'Zoek de balans', d: 'Staat de wip precies recht, dan krijg je bonuspunten.' },
     { t: 'Pas op', d: 'Slaat de wip te ver door, of wordt een stapel te hoog, dan ben je af.' },
+    { t: 'Haal de opdracht', d: 'Elk level heeft een opdracht, zoals een gewicht van 8 maken. Je krijgt een vast aantal gewichten. Hoe meer je overhoudt, hoe meer sterren.' },
   ],
   why: 'Leuk om naar te kijken, maar natuurkunde maakt het lastiger om goed af te stellen.',
-  start(api) { Anim.setup(this); this.st = Array.from({ length: 7 }, () => []); this.slot = 3; this.limit = 16; this.shownT = 0; this.ang = 0; this.next(api); this.hud(api); },
+  start(api, cfg) { Anim.setup(this); this.st = Array.from({ length: 7 }, () => []); this.slot = 3; this.limit = 16; this.shownT = 0; this.ang = 0; this.left = cfg ? cfg.moves : null; this.next(api); this.hud(api); },
+  get movesLeft() { return this.left; },
+  moveWord: ['gewicht', 'gewichten'],
   next(api) { const r = api.rand(); this.cur = r < 0.55 ? 1 : r < 0.9 ? 2 : 3; this.ct0 = performance.now(); },
   torque() { return this.st.reduce((a, s, i) => a + (i - 3) * s.reduce((x, t) => x + Math.pow(2, t.v - 1), 0), 0); },
-  hud(api) { const t = this.torque(); api.info(`Kanteling ${t > 0 ? '→' : t < 0 ? '←' : '•'} ${Math.abs(t)}/${this.limit}`); },
+  hud(api) { const t = this.torque(); api.info(`Kanteling ${t > 0 ? '→' : t < 0 ? '←' : '•'} ${Math.abs(t)}/${this.limit}`); if (this.left != null) api.setMoves(this.left); },
+  // a crisp tick when your finger moves to another spot
+  pick(p) { const s = this.slotAt(p); if (s !== this.slot) LAB.api.buzz('select'); this.slot = s; },
   slotAt(p) { return Math.max(0, Math.min(6, Math.floor((p.x / LAB.api.W - 0.08) / 0.84 * 7))); },
-  hover(p) { this.slot = this.slotAt(p); }, down(p) { this.slot = this.slotAt(p); }, move(p) { this.slot = this.slotAt(p); },
+  hover(p) { this.slot = this.slotAt(p); }, down(p) { this.pick(p); }, move(p) { this.pick(p); },
   up(p, m, cancel) { if (cancel) return; this.slot = this.slotAt(p); const s = this.slot; Anim.input(this, () => this.drop(s)); },
   key(k) { if (k === 'ArrowLeft') { this.slot = Math.max(0, this.slot - 1); return true; } if (k === 'ArrowRight') { this.slot = Math.min(6, this.slot + 1); return true; } if (k === 'ArrowDown' || k === ' ' || k === 'Enter') { const s = this.slot; Anim.input(this, () => this.drop(s)); return true; } return false; },
   drop(slot) {
     const api = LAB.api, s = this.st[slot];
+    if (this.left != null) { this.left--; api.setMoves(this.left); }
     // 1) the weight falls from the top and bounces onto its stack
     const t = Anim.tile(this, this.cur, 0, 0, { i: slot, h: s.length, f: 0, l: this.cur }); s.push(t);
     Anim.phase(this, 260 + (6 - s.length) * 25, () => [[Anim.s(this, t), { f: 1 }]], 'bounce');
-    Anim.phase(this, 0, () => api.tone(200, 0.06, 'sine', 0.06));
+    const w0 = this.cur;
+    Anim.phase(this, 0, () => { api.sfx('land', w0); api.buzz('light'); });
     // 2) equal weights melt together: the top one sinks into the one below, which grows
     let merges = 0;
     while (s.length >= 2 && s[s.length - 1].v === s[s.length - 2].v) {
@@ -33,7 +40,9 @@ GAMES.push({
       Anim.phase(this, 150, () => [[Anim.s(this, top), { h: hb, sc: 0.6 }]], 'in');
       Anim.phase(this, 140, () => {
         this.sp.delete(top.id); const b = Anim.s(this, below); b.l = nv;
-        const [x, y] = this.slotXY(slot, hb); api.burst(x, y, api.COLORS[nv % 6], 12); api.tone(api.note(nv + m), 0.16, 'triangle', 0.14);
+        const [x, y] = this.slotXY(slot, hb); api.burst(x, y, api.COLORS[nv % 6], 14, 1 + m * 0.2); api.sfx('merge', nv + m); api.buzz(m >= 2 ? 'heavy' : 'medium');
+        api.collect('merge', null, 1, x, y, api.COLORS[nv % 6]); api.collect('make', null, nv, x, y, api.COLORS[nv % 6]);
+        if (m >= 2) api.banner(['Super!', 'Geweldig!', 'Fantastisch!'][Math.min(m - 2, 2)], m - 1);
         return [[b, { sc: 1.4 }]];
       });
       Anim.phase(this, 220, () => [[Anim.s(this, below), { sc: 1 }]], 'bounce');
@@ -44,10 +53,11 @@ GAMES.push({
       this.shownT = tq;
       const [x, y] = this.slotXY(slot, h - 1);
       if (merges) { api.add(10 * Math.pow(2, last) * merges, x, y); api.buzz(10); }
-      if (tq === 0 && this.st.some(q => q.length)) { api.add(25, api.W / 2, api.W * 0.62); api.banner('Perfect in balans!'); }
+      if (tq === 0 && this.st.some(q => q.length)) { api.add(25); api.float('Perfect!', api.W / 2, api.W * 0.9, 1.3); api.sfx('star', 1); api.collect('perfect', null, 1, api.W / 2, api.W * 0.72, api.accent); }
       this.hud(api); this.next(api);
-      if (Math.abs(tq) > this.limit) { api.shake(14); return api.over('De wip sloeg om.'); }
+      if (Math.abs(tq) > this.limit) { api.shake(14); api.buzz('heavy'); return api.over('De wip sloeg om.'); }
       if (h > 6) return api.over('Een stapel werd te hoog.');
+      api.turnEnd(this.left);
     });
   },
   slotXY(i, h) {
@@ -98,6 +108,35 @@ GAMES.push({
 });
 
 
+// ---------- levels: [weights, weights left for 2 stars, for 3 stars, ...goals]; a goal is [kind, amount].
+// The numbers come from simulated play (scratchpad sim/bal-gen.js): early levels nearly always work out, later ones get tighter.
+const BAL_LEVELS = [[10,4,6,["m",3]],[18,8,9,["mg",4]],[19,10,14,["m",4]],[10,8,9,["p",2]],[14,3,5,["s",300]],[20,5,6,["mg",8],["p",1]],[19,5,7,["m",4],["mg",6]],[18,5,7,["s",600]],[15,8,11,["p",4]],[52,20,32,["m",5]],[25,6,8,["mg",10]],[20,9,12,["m",4],["p",3]],[23,6,8,["s",900]],[26,4,6,["mg",12],["p",3]],[55,18,22,["m",5],["mg",14]],[54,15,31,["m",5]],[25,3,6,["mg",12],["s",550]],[27,4,6,["mg",14]],[24,5,7,["s",1000]],[23,3,5,["p",5],["mg",10]],[22,5,14,["m",4],["p",4]],[25,4,6,["m",4],["mg",12]],[24,2,3,["mg",13],["s",650]],[27,2,3,["mg",16]],[20,2,5,["s",1150]],[27,5,8,["p",6],["mg",11]],[22,6,8,["m",4],["p",4]],[38,9,20,["m",5]],[27,2,4,["mg",15],["s",750]],[30,1,3,["mg",18]],[26,4,9,["s",1300]],[29,6,9,["p",7],["mg",12]],[18,5,10,["m",4],["p",5]],[25,2,3,["m",4],["mg",14]],[29,2,4,["mg",16],["s",850]],[32,2,4,["mg",20]],[25,2,7,["s",1450]],[28,3,6,["p",7],["mg",13]],[21,4,8,["m",4],["p",5]],[34,13,18,["m",5]],[33,3,5,["mg",18],["s",900]],[36,1,3,["mg",22]],[29,3,4,["s",1600]],[29,4,6,["p",8],["mg",14]],[15,4,6,["m",4],["p",6]],[28,2,4,["m",4],["mg",17]],[31,1,3,["mg",19],["s",1000]],[39,2,4,["mg",24]],[31,3,8,["s",1750]],[30,2,4,["p",9],["mg",16]],[24,5,9,["m",4],["p",7]],[48,2,16,["m",5]],[32,1,3,["mg",20],["s",1100]],[37,1,3,["mg",24]],[27,4,5,["s",1900]],[40,8,12,["p",10],["mg",16]],[20,5,8,["m",4],["p",7]],[29,1,2,["m",4],["mg",18]],[32,2,3,["mg",20],["s",1200]],[36,1,3,["mg",24]]];
+Object.assign(GAMES[GAMES.length - 1], {
+  level(n) {
+    const r = BAL_LEVELS[n <= BAL_LEVELS.length ? n - 1 : 20 + (n - 61) % 40];
+    const kinds = { m: 'make', mg: 'merge', p: 'perfect', s: 'score' };
+    return { moves: r[0], s2: r[1], s3: r[2], goals: r.slice(3).map(([k, amt]) => ({ k: kinds[k], n: amt, max: k === 'm' })) };
+  },
+  goalDesc(g) {
+    if (g.k === 'make') return `maak een gewicht van ${2 ** (g.n - 1)}`;
+    if (g.k === 'merge') return `laat ${g.n} keer gewichten samensmelten`;
+    return `breng de wip ${g.n} keer precies in balans`;
+  },
+  goalText(g, left) {
+    if (g.k === 'make') return `een gewicht van ${2 ** (g.n - 1)}`;
+    if (g.k === 'merge') return `${left} keer samensmelten`;
+    return `${left} keer precies in balans`;
+  },
+  // the small picture on a goal chip, drawn in a 100 x 100 box
+  goalIcon(c, g, api) {
+    if (g.k === 'make') return this.ball(api, 50, 48, g.n, 1, c, 40);
+    if (g.k === 'merge') { this.ball(api, 32, 52, 2, 1, c, 26); this.ball(api, 68, 52, 2, 1, c, 26); return; }
+    this.base(c, 50, 50, 100, api.accent);
+    c.fillStyle = '#d9cfc0'; c.beginPath(); c.roundRect(8, 46, 84, 10, 5); c.fill(); c.fillStyle = '#fff'; c.beginPath(); c.roundRect(8, 42, 84, 9, 4.5); c.fill();
+    c.strokeStyle = '#d9cfc0'; c.lineWidth = 2; c.beginPath(); c.roundRect(8, 42, 84, 9, 4.5); c.stroke();
+  },
+});
+
 // ---------- app extras: first-play tutorial and the logo ----------
 Object.assign(GAMES[GAMES.length - 1], {
   // first game: the first few weights come in an easy order (light ones that pair up well)
@@ -137,6 +176,6 @@ Object.assign(GAMES[GAMES.length - 1], {
 // the easy order is used up before the normal random weights come back
 {
   const g = GAMES[GAMES.length - 1], start0 = g.start, next0 = g.next;
-  g.start = function (api) { this.easy = null; start0.call(this, api); };
+  g.start = function (api, cfg) { this.easy = null; start0.call(this, api, cfg); };
   g.next = function (api) { if (this.easy && this.easy.length) { this.cur = this.easy.shift(); this.ct0 = performance.now(); return; } next0.call(this, api); };
 }

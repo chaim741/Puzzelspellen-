@@ -8,13 +8,14 @@ GAMES.push({
     { t: 'Het bord knijpt samen', d: 'De tegels aan beide kanten van de naad schuiven tegen elkaar aan.' },
     { t: 'Gelijke tegels knallen', d: 'Komen twee dezelfde tegels tegenover elkaar, dan knallen ze weg en schuiven er nieuwe in.' },
     { t: 'Maak kettingen', d: 'Ontstaan er daarna weer paren aan de naad, dan gaat het door en krijg je extra punten.' },
-    { t: 'Let op je zetten', d: 'Je hebt een beperkt aantal zetten. Meerdere paren tegelijk geven zetten terug.' },
+    { t: 'Haal de opdracht', d: 'Elk level heeft een opdracht, zoals een aantal rode tegels knallen. Lukt het binnen de zetten, dan ga je door. Hoe meer zetten over, hoe meer sterren.' },
+    { t: 'Vrij spelen', d: 'Zonder opdracht spelen kan ook. Dan geven meerdere paren tegelijk zetten terug.' },
   ],
   why: 'Je kiest niet alleen een richting, maar ook waar de twee helften botsen.',
-  start(api) {
+  start(api, cfg) {
     this.n = 4; this.nid = 1; this.sp = new Map();
     this.b = H.make(6, 6, (x, y) => this.tile(api.rnd(this.n), x, y));
-    this.moves = 18; this.flash = null; this.prev = null; this.phases = []; this.ph = null; this.queued = null;
+    this.moves = cfg ? cfg.moves : 18; this.flash = null; this.prev = null; this.phases = []; this.ph = null; this.queued = null;
     this.hud(api);
   },
   tile(v, x, y, fromX = x, fromY = y, a = 1) {
@@ -22,14 +23,22 @@ GAMES.push({
     this.sp.set(t.id, { v, x: fromX, y: fromY, sc: 1, a });
     return t;
   },
-  hud(api) { api.info(`Nog ${this.moves} zetten`); },
+  get movesLeft() { return this.moves; },
+  hud(api) { if (api.mode === 'level') { api.info(''); api.setMoves(this.moves); } else api.info(`Nog ${this.moves} zetten`); },
   seamFrom(dir, p) {
     const G = LAB.api.grid(6, 6), f = p ? G.cellF(p.x, p.y) : { c: 3, r: 3 };
     if (dir === 'up' || dir === 'down') return { v: true, k: Math.max(1, Math.min(5, Math.round(f.c))) };
     return { v: false, k: Math.max(1, Math.min(5, Math.round(f.r))) };
   },
   down(p) { this.prev = null; this.sp0 = p; },
-  move(p) { if (!this.sp0) return; const dx = p.x - this.sp0.x, dy = p.y - this.sp0.y; if (Math.hypot(dx, dy) > 10) this.prev = this.seamFrom(Math.abs(dx) > Math.abs(dy) ? 'left' : 'up', this.sp0); },
+  move(p) {
+    if (!this.sp0) return; const dx = p.x - this.sp0.x, dy = p.y - this.sp0.y;
+    if (Math.hypot(dx, dy) <= 10) return;
+    const s = this.seamFrom(Math.abs(dx) > Math.abs(dy) ? 'left' : 'up', this.sp0);
+    // a crisp tick when the line under your finger lights up
+    if (!this.prev || this.prev.v !== s.v || this.prev.k !== s.k) LAB.api.buzz('select');
+    this.prev = s;
+  },
   up() { this.prev = null; this.sp0 = null; },
 
   // queue an animation phase: tweens is a list of [sprite, {x,y,sc,a}] targets
@@ -45,7 +54,7 @@ GAMES.push({
     const set = (i, j, t) => { const [x, y] = xy(i, j); b[y][x] = t; };
     const half = s.v ? [0.5, 0] : [0, 0.5];
     let wave = 0, total = 0, pairs = 0;
-    this.moves--;
+    this.moves--; this.hud(api);
     // every wave: tiles at the seam collide, matches pop, both sides close the gap, new tiles slide in from the edge
     while (wave < 8) {
       const hit = [];
@@ -55,7 +64,7 @@ GAMES.push({
         const pairsAll = [...Array(6).keys()].map(i => [get(i, s.k - 1), get(i, s.k)]);
         this.phase(90, () => pairsAll.map(([l, r]) => { const a = this.sp.get(l.id), c = this.sp.get(r.id); return [[a, { x: a.x + half[0] * 0.3, y: a.y + half[1] * 0.3 }], [c, { x: c.x - half[0] * 0.3, y: c.y - half[1] * 0.3 }]]; }).flat());
         this.phase(160, () => pairsAll.map(([l, r]) => { const a = this.sp.get(l.id), c = this.sp.get(r.id); return [[a, { x: Math.round(a.x), y: Math.round(a.y) }], [c, { x: Math.round(c.x), y: Math.round(c.y) }]]; }).flat(), 'back');
-        this.phase(1, () => { api.tone(150, 0.1, 'sine', 0.08); api.shake(3); return []; });
+        this.phase(1, () => { api.sfx('bump'); api.buzz('light'); api.shake(3); return []; });
         break;
       }
       if (!hit.length) break;
@@ -77,8 +86,12 @@ GAMES.push({
         popped.forEach(([L, , i], k) => { const [mx, my] = xy(i, s.k - 0.5); api.burst(G.x(mx), G.y(my), api.COLORS[L.v], 14); });
         const [cx, cy] = xy(popped[0][2], s.k - 0.5);
         api.add(pts, G.x(cx), G.y(cy), 1 + w * 0.15);
-        api.tone(api.note(w * 2 + hit.length), 0.18); api.buzz(10); api.shake(2 + w * 2 + hit.length);
-        if (w >= 1) api.banner('Ketting ×' + (w + 1));
+        // one soft low note per pair, a little higher with every wave of the chain
+        popped.slice(0, 5).forEach((_, j) => api.sfx('pop', w * 2 + j, j * 0.055));
+        api.buzz(w >= 2 ? 'heavy' : w || hit.length > 1 ? 'medium' : 'light'); api.shake(2 + w * 2 + hit.length);
+        popped.forEach(([L, , i]) => { const [px, py] = xy(i, s.k - 0.5); api.collect('tile', L.v, 2, G.x(px), G.y(py), api.COLORS[L.v]); });
+        const tier = (w ? w - 1 : -1) + (hit.length >= 3 ? 1 : 0) + (hit.length >= 4 ? 1 : 0);
+        if (tier >= 0) api.banner(WORDS[Math.min(tier, WORDS.length - 1)], tier);
         return popped.flatMap(([L, R]) => [[this.sp.get(L.id), { sc: 1.6, a: 0 }], [this.sp.get(R.id), { sc: 1.6, a: 0 }]]);
       });
       // 3) both sides close the gap and new tiles drop in from the edges
@@ -89,8 +102,14 @@ GAMES.push({
       this.phase(70, () => []);
       wave++;
     }
-    if (total) { const bonus = Math.min(3, Math.floor(total / 60)); if (bonus) this.moves += bonus; }
-    this.phase(1, () => { this.hud(api); if (this.moves <= 0) api.over('Je zetten zijn op.'); return []; });
+    // free play: a big move gives moves back. Levels have a fixed number of moves.
+    const bonus = api.mode === 'level' || !total ? 0 : Math.min(3, Math.floor(total / 60));
+    this.moves += bonus;
+    this.phase(1, () => {
+      if (wave >= 2) api.collect('chain', null, 1, api.W / 2, api.W / 2, api.accent);
+      if (bonus) api.float('+' + bonus + (bonus === 1 ? ' zet' : ' zetten'), api.W / 2, api.W * 0.2, 0.9);
+      this.hud(api); api.turnEnd(this.moves); return [];
+    });
   },
   step(now) {
     while (true) {
@@ -131,6 +150,38 @@ GAMES.push({
       ctx.strokeStyle = api.accent; ctx.lineWidth = cs * 0.13; ctx.stroke();
       ctx.strokeStyle = '#fff'; ctx.lineWidth = cs * 0.045; ctx.stroke(); ctx.globalAlpha = 1;
     }
+  },
+});
+
+const WORDS = ['Mooi!', 'Super!', 'Geweldig!', 'Fantastisch!', 'Ongelooflijk!'];
+
+// ---------- levels: [moves, moves left for 2 stars, for 3 stars, ...goals]; a goal is [kind, amount, colour].
+// Move limits come from simulated play (scratchpad sim/seam-gen.js): early levels nearly always work out, later ones get tighter.
+const SEAM_LEVELS = [[6,2,4,["t",12]],[15,6,8,["t",10,0]],[10,6,7,["s",500]],[12,4,5,["t",12,3]],[8,5,6,["c",2]],[14,4,6,["t",10,0],["t",10,2]],[11,4,5,["t",40]],[18,5,8,["s",900]],[17,5,7,["t",18,1]],[10,4,5,["c",3],["t",10,3]],[17,5,7,["t",16,2]],[10,3,4,["t",12,0],["t",12,1]],[20,5,7,["s",1100]],[13,5,7,["c",4]],[15,3,5,["t",14,3],["t",14,2],["t",8,0]],[11,4,5,["t",10,0],["t",10,2],["t",10,1]],[13,4,5,["t",57]],[16,4,6,["t",22,2]],[13,4,5,["t",16,3],["t",16,1]],[11,3,4,["s",700]],[14,5,6,["c",5],["t",12,1]],[11,3,4,["t",12,2],["t",12,0],["t",12,3]],[14,3,4,["t",63]],[17,2,4,["t",24,0]],[14,1,3,["t",18,1],["t",18,3]],[13,3,5,["s",800]],[13,3,5,["c",5],["t",14,3]],[12,2,4,["t",12,0],["t",12,2],["t",12,1]],[13,2,3,["t",69]],[18,2,3,["t",26,2]],[13,2,4,["t",20,3],["t",20,1]],[13,2,4,["s",900]],[17,4,6,["c",6],["t",14,1]],[15,2,3,["t",14,2],["t",14,0],["t",14,3]],[12,1,2,["t",75]],[20,3,5,["t",28,0]],[15,2,4,["t",22,1],["t",22,3]],[14,2,4,["s",1000]],[16,3,6,["c",6],["t",16,3]],[15,1,3,["t",16,0],["t",16,2],["t",16,1]],[15,2,4,["t",81]],[22,2,4,["t",30,2]],[15,2,3,["t",22,3],["t",22,1]],[17,2,4,["s",1100]],[15,2,4,["c",7],["t",18,1]],[13,2,3,["t",16,2],["t",16,0],["t",16,3]],[15,2,3,["t",87]],[23,2,4,["t",34,0]],[16,2,3,["t",24,1],["t",24,3]],[15,1,3,["s",1200]],[16,2,4,["c",7],["t",18,3]],[11,2,3,["t",18,0],["t",18,2],["t",18,1]],[16,1,3,["t",90]],[27,2,4,["t",36,2]],[17,2,3,["t",26,3],["t",26,1]],[19,2,5,["s",1300]],[18,3,5,["c",7],["t",20,1]],[15,1,3,["t",18,2],["t",18,0],["t",18,3]],[15,1,2,["t",90]],[21,1,3,["t",38,0]]];
+const COLOR_NAMES = ['rode', 'oranje', 'groene', 'blauwe'];
+Object.assign(GAMES[GAMES.length - 1], {
+  level(n) {
+    const r = SEAM_LEVELS[n <= SEAM_LEVELS.length ? n - 1 : 20 + (n - 61) % 40];
+    const kinds = { t: 'tile', s: 'score', c: 'chain' };
+    return { moves: r[0], s2: r[1], s3: r[2], goals: r.slice(3).map(([k, amt, v]) => ({ k: kinds[k], n: amt, v: v == null ? null : v })) };
+  },
+  goalDesc(g) {
+    if (g.k === 'chain') return `maak ${g.n} ${g.n === 1 ? 'ketting' : 'kettingen'}`;
+    return `knal ${g.n} ${g.v == null ? '' : COLOR_NAMES[g.v] + ' '}tegels`;
+  },
+  goalText(g, left) {
+    if (g.k === 'chain') return `${left} ${left === 1 ? 'ketting' : 'kettingen'}`;
+    return `${left} ${g.v == null ? '' : COLOR_NAMES[g.v] + ' '}${left === 1 ? 'tegel' : 'tegels'}`;
+  },
+  // the small picture on a goal chip, drawn in a 100 x 100 box
+  goalIcon(c, g, api) {
+    if (g.k === 'chain') {
+      c.lineWidth = 11; c.strokeStyle = api.accent;
+      c.beginPath(); c.roundRect(10, 32, 46, 36, 18); c.stroke(); c.beginPath(); c.roundRect(44, 32, 46, 36, 18); c.stroke();
+      return;
+    }
+    if (g.v == null) { [[30, 32, 0], [70, 32, 3], [30, 72, 2], [70, 72, 1]].forEach(([x, y, v]) => api.block(x, y, 36, api.COLORS[v], 9, c)); return; }
+    const fy = api.block(50, 50, 82, api.COLORS[g.v], 20, c); api.shape(g.v, 50, fy, 16, 'emboss', null, c);
   },
 });
 

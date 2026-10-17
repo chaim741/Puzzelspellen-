@@ -145,6 +145,48 @@ canvas#cv { width: 100%; height: 100%; display: block; border-radius: 26px; box-
 .daily-res .small { font-size: 15px; }
 .ds-score { font-family: var(--display); font-weight: 700; font-size: 64px; line-height: 1; color: var(--accent); font-variant-numeric: tabular-nums; }
 [hidden]#restartBtn { visibility: hidden; display: grid; }
+
+/* levels: goal chips, moves counter, stars, the level grid */
+button.rec { padding: 10px 12px 12px; border-radius: 18px; font: inherit; }
+.rec b span { display: inline; font-size: inherit; color: inherit; }
+.rec b .st { color: var(--gold); margin-right: 4px; }
+.free { display: flex; justify-content: space-between; align-items: center; padding: 13px 16px; font-size: 16px; }
+.free small { font: 700 13px var(--body); color: var(--muted); }
+.stat[hidden] { display: none; }
+#movesStat { background: var(--accent); box-shadow: 0 4px 0 var(--accent-deep), 0 14px 28px -18px var(--accent); }
+#movesStat span { color: rgba(255, 255, 255, .8); }
+#movesStat b { color: #fff; }
+#movesStat.low { background: var(--danger); box-shadow: 0 4px 0 #b73a29; }
+.stat.low b { animation: pulse .9s ease-in-out infinite; }
+@keyframes pulse { 50% { transform: scale(1.12); } }
+.goals { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.goals[hidden] { display: none; }
+.chip { display: flex; align-items: center; gap: 6px; background: var(--card); border-radius: 18px; padding: 5px 14px 5px 7px; box-shadow: var(--lift); }
+.chip canvas { width: 42px; height: 42px; }
+.chip b:empty { display: none; }
+.chip:has(b:empty) { padding-right: 7px; }
+.chip b { font-family: var(--display); font-weight: 600; font-size: 24px; min-width: 1.2em; text-align: center; font-variant-numeric: tabular-nums; }
+.chip.done { background: #e3f6ec; }
+.chip.done b { color: #1f9e68; }
+.bump { animation: bump .32s cubic-bezier(.2, 1.6, .4, 1); }
+@keyframes bump { 40% { transform: scale(1.18); } }
+.fly { position: fixed; z-index: 30; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; pointer-events: none; border: 2px solid #fff; box-shadow: 0 2px 6px rgba(40, 30, 60, .3); transition: transform .48s cubic-bezier(.5, -0.3, .7, .6), opacity .48s ease; }
+.stars { display: flex; justify-content: center; gap: 6px; margin: -4px 0 2px; }
+.stars[hidden] { display: none; }
+.stars svg { width: 54px; height: 54px; fill: var(--edge); stroke: #fff; stroke-width: 1.6; stroke-linejoin: round; }
+.stars svg:nth-child(2) { width: 66px; height: 66px; margin-top: -10px; }
+.stars svg.on { fill: var(--gold); animation: starIn .45s cubic-bezier(.2, 1.7, .4, 1); filter: drop-shadow(0 3px 4px rgba(201, 125, 10, .45)); }
+@keyframes starIn { from { transform: scale(.2) rotate(-40deg); } }
+.over-card .row2 { display: flex; gap: 10px; } .over-card .row2 button { flex: 1; }
+.over-card [hidden] { display: none; }
+.lv-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.lv { padding: 10px 0 8px; display: grid; gap: 2px; justify-items: center; border-radius: 16px; }
+.lv b { font: 600 22px var(--display); }
+.lv i { font-style: normal; font-size: 13px; color: var(--gold); letter-spacing: 1px; height: 16px; }
+.lv i em { font-style: normal; color: var(--edge); }
+.lv.next { background: var(--accent); color: #fff; box-shadow: 0 4px 0 var(--accent-deep); }
+.lv.next i em { color: rgba(255, 255, 255, .45); }
+.lv.locked { opacity: .45; }
 @media (prefers-reduced-motion: reduce) { .screen, .sheet, .coach, .sheet-bg, button { transition: none; } .overlay, .over-card { animation: none; } }
 </style>
 
@@ -155,6 +197,7 @@ canvas#cv { width: 100%; height: 100%; display: block; border-radius: 26px; box-
   <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .9-1 1.6v.4"/><path d="M12 17h.01"/></symbol>
   <symbol id="i-redo" viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4.5 4.5v4h4"/></symbol>
   <symbol id="i-next" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5L2.6 9.4l6.5-.9z"/></symbol>
 </svg>
 
 <section class="screen" id="home">
@@ -170,11 +213,12 @@ canvas#cv { width: 100%; height: 100%; display: block; border-radius: 26px; box-
     </div>
     <div class="menu">
       <div class="records">
-        <div class="rec"><span>Record</span><b id="homeBest">0</b></div>
-        <div class="rec"><span>Dagpuzzel</span><b id="homeDaily">–</b></div>
+        <button class="rec" id="starsBtn"><span>Levels</span><b><span class="st">★</span><span id="homeStars">0</span></b></button>
+        <div class="rec"><span>Record vrij spelen</span><b id="homeBest">0</b></div>
       </div>
-      <button class="go" id="playBtn">Spelen</button>
+      <button class="go" id="playBtn">Level 1</button>
       <button class="daily" id="dailyBtn"><span class="lbl"><span class="cal" id="dailyDay"></span>Dagpuzzel</span><small id="dailyDate"></small></button>
+      <button class="free" id="freeBtn">Vrij spelen<small>zonder opdracht</small></button>
     </div>
   </div>
 </section>
@@ -185,10 +229,12 @@ canvas#cv { width: 100%; height: 100%; display: block; border-radius: 26px; box-
       <button class="icon-btn" id="homeBtn" aria-label="Naar start"><svg><use href="#i-back"/></svg></button>
       <div class="mode" id="mode"></div>
       <div class="stats">
+        <div class="stat" id="movesStat" hidden><span id="movesLbl">Zetten</span><b id="moves">0</b></div>
         <div class="stat"><span>Score</span><b id="score">0</b></div>
-        <div class="stat"><span>Record</span><b id="best">0</b></div>
+        <div class="stat" id="bestStat"><span>Record</span><b id="best">0</b></div>
       </div>
     </div>
+    <div class="goals" id="goals" hidden></div>
     <div class="info"><span id="info"></span></div>
     <div class="coach" id="coach" hidden></div>
     <div class="well" id="well">
@@ -196,10 +242,11 @@ canvas#cv { width: 100%; height: 100%; display: block; border-radius: 26px; box-
         <canvas id="cv" aria-label="Speelveld"></canvas>
         <div class="overlay" id="over" hidden>
           <div class="over-card">
+            <div class="stars" id="overStars" hidden><svg viewBox="0 0 24 24"><use href="#i-star"/></svg><svg viewBox="0 0 24 24"><use href="#i-star"/></svg><svg viewBox="0 0 24 24"><use href="#i-star"/></svg></div>
             <h2 id="overTitle">Einde</h2>
             <div class="big" id="finalScore">0</div>
             <p id="overText"></p>
-            <div class="row"><button class="go" id="againBtn">Nog een keer</button><button id="toHomeBtn">Naar start</button></div>
+            <div class="row"><button class="go" id="againBtn">Nog een keer</button><div class="row2"><button id="shareBtn" hidden>Deel</button><button id="toHomeBtn">Naar start</button></div></div>
           </div>
         </div>
       </div>
@@ -232,6 +279,14 @@ canvas#cv { width: 100%; height: 100%; display: block; border-radius: 26px; box-
     <button class="link-row" id="rulesBtn">Spelregels<svg><use href="#i-next"/></svg></button>
     <button class="link-row" id="tutBtn">Uitleg opnieuw spelen<svg><use href="#i-next"/></svg></button>
     <p class="small">Je scores worden alleen op dit toestel bewaard.</p>
+  </div>
+</div>
+
+<div class="sheet-bg" id="levelsSheet" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="lvTitle">
+    <div class="sheet-head"><h3 id="lvTitle">Levels</h3><button class="icon-btn" id="closeLevels" aria-label="Sluiten"><svg><use href="#i-close"/></svg></button></div>
+    <p class="small" id="lvStars"></p>
+    <div class="lv-grid" id="lvGrid"></div>
   </div>
 </div>
 
