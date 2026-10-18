@@ -215,9 +215,9 @@ const LAB = (() => {
   const banner = (text, tier = 0) => { fx = fx.filter(f => f.k !== 'banner'); fx.push({ k: 'banner', text, tier: Math.min(tier, 4), life: 0, max: 1250 }); };
   const shake = a => { shakeAmt = Math.max(shakeAmt, a); };
 
-  const fmt = n => n.toLocaleString('nl-NL');
+  const fmt = n => n.toLocaleString('en-US');
   // what one move is called in this game: a move, or a weight
-  const MW = () => cur.moveWord || ['zet', 'zetten'];
+  const MW = () => cur.moveWord || ['move', 'moves'];
   const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
   const bestKey = () => mode === 'daily' ? 'daily_' + today() : 'best';
   function hud() {
@@ -232,7 +232,7 @@ const LAB = (() => {
   const goalLeft = g => g.max ? (g.got >= g.n ? 0 : 1) : Math.max(0, g.n - g.got);
   const goalsDone = () => lvl && lvl.goals.every(g => g.k === 'score' ? score >= g.n : goalLeft(g) === 0);
   function goalText(g) {
-    if (g.k === 'score') return `${fmt(Math.max(0, g.n - score))} punten`;
+    if (g.k === 'score') return `${fmt(Math.max(0, g.n - score))} more points`;
     return cur.goalText ? cur.goalText(g, goalLeft(g)) : String(goalLeft(g));
   }
   function buildChips() {
@@ -301,8 +301,8 @@ const LAB = (() => {
     // the game calls this when a turn has finished animating; movesLeft is null for games without a move limit
     turnEnd(movesLeft) {
       if (ended) return;
-      if (mode === 'level') { if (goalsDone()) return levelWin(movesLeft || 0); if (movesLeft != null && movesLeft <= 0) return api.over(`Je ${MW()[1]} zijn op.`); return; }
-      if (movesLeft != null && movesLeft <= 0) api.over('Je zetten zijn op.');
+      if (mode === 'level') { if (goalsDone()) return levelWin(movesLeft || 0); if (movesLeft != null && movesLeft <= 0) return api.over(`Out of ${MW()[1]}.`); return; }
+      if (movesLeft != null && movesLeft <= 0) api.over('Out of moves.');
     },
     over(reason) {
       if (ended) return; ended = true;
@@ -316,13 +316,13 @@ const LAB = (() => {
         if (!ended || !playing) return;
         coach(null);
         $('overStars').hidden = true;
-        $('overTitle').textContent = mode === 'daily' ? 'Dagpuzzel klaar' : isBest && score > 0 ? 'Nieuw record!' : close ? 'Bijna!' : 'Einde';
+        $('overTitle').textContent = mode === 'daily' ? 'Daily puzzle done' : isBest && score > 0 ? 'New best!' : close ? 'So close!' : 'Game over';
         $('overTitle').classList.toggle('new', (isBest && score > 0) || close);
         $('finalScore').textContent = fmt(score); $('finalScore').hidden = false;
         // how far from the record: the "almost" feeling that makes you try again
-        const gap = mode === 'free' && !isBest && prev > 0 ? ` Nog ${fmt(prev - score + 1)} punten tot je record.` : '';
-        $('overText').textContent = (reason || '') + gap + (mode === 'daily' ? ' Morgen staat er een nieuwe dagpuzzel klaar.' : '');
-        $('againBtn').textContent = mode === 'daily' ? 'Deel je score' : 'Nog een keer';
+        const gap = mode === 'free' && !isBest && prev > 0 ? ` ${fmt(prev - score + 1)} more points to beat your best.` : '';
+        $('overText').textContent = (reason || '') + gap + (mode === 'daily' ? ' A new daily puzzle is waiting tomorrow.' : '');
+        $('againBtn').textContent = mode === 'daily' ? 'Share your score' : 'Play again';
         $('shareBtn').hidden = true;
         openOver();
       }, 600);
@@ -344,7 +344,7 @@ const LAB = (() => {
   function levelWin(left) {
     ended = true; coach(null); $('movesStat').classList.remove('low');
     const n = lvl.n, st = left >= lvl.s3 ? 3 : left >= lvl.s2 ? 2 : 1;
-    sfx('win'); buzz('success'); confetti(); banner('Level gehaald!', 1);
+    sfx('win'); buzz('success'); confetti(); banner('Level complete!', 1);
     // save right away: closing the app during the celebration keeps the stars
     const all = stars(); all[n] = Math.max(all[n] || 0, st); store.set('stars', all);
     if (unlocked() <= n) store.set('level', n + 1);
@@ -364,10 +364,10 @@ const LAB = (() => {
   }
   function showWin(st, left) {
     if (!playing || mode !== 'level') return;
-    $('overTitle').textContent = `Level ${lvl.n} gehaald!`; $('overTitle').classList.add('new');
+    $('overTitle').textContent = `Level ${lvl.n} complete!`; $('overTitle').classList.add('new');
     $('finalScore').textContent = fmt(score); $('finalScore').hidden = false;
-    $('overText').textContent = left ? `Met ${left} ${MW()[left === 1 ? 0 : 1]} over.` : 'Precies op tijd!';
-    $('againBtn').textContent = 'Volgende level';
+    $('overText').textContent = left ? `${left} ${MW()[left === 1 ? 0 : 1]} to spare.` : 'Just in time!';
+    $('againBtn').textContent = 'Next level';
     $('shareBtn').hidden = false;
     const box = $('overStars'); box.hidden = false;
     [...box.children].forEach((s, k) => { s.classList.remove('on'); if (k < st) later(() => { s.classList.add('on'); sfx('star', k); buzz('medium'); }, 450 + k * 380); });
@@ -384,10 +384,10 @@ const LAB = (() => {
       if (!ended || !playing) return;
       coach(null);
       $('overStars').hidden = true;
-      $('overTitle').textContent = close ? 'Bijna!' : `Level ${lvl.n}`; $('overTitle').classList.toggle('new', close);
+      $('overTitle').textContent = close ? 'So close!' : `Level ${lvl.n}`; $('overTitle').classList.toggle('new', close);
       $('finalScore').hidden = true;
-      $('overText').textContent = (reason ? reason + ' ' : '') + (missing.length ? 'Je had nog nodig: ' + missing.map(goalText).join(' en ') + '.' : '');
-      $('againBtn').textContent = 'Opnieuw'; $('shareBtn').hidden = true;
+      $('overText').textContent = (reason ? reason + ' ' : '') + (missing.length ? 'You still needed ' + missing.map(goalText).join(' and ') + '.' : '');
+      $('againBtn').textContent = 'Try again'; $('shareBtn').hidden = true;
       openOver();
     }, 600);
   }
@@ -409,7 +409,7 @@ const LAB = (() => {
     $('over').hidden = true; api.info(''); coach(null);
     rng = mode === 'daily' ? seeded(hash(today() + cur.id)) : mode === 'level' ? seeded(hash('L' + lvl.n + cur.id)) : Math.random;
     if (lvl) { lvl.result = null; lvl.goals.forEach(g => { g.got = 0; g.shown = 0; }); }
-    $('mode').innerHTML = mode === 'daily' ? `<b>Dagpuzzel</b> · ${new Date().toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })}` : mode === 'level' ? `<b>Level ${lvl.n}</b>` : '<b>Vrij spelen</b>';
+    $('mode').innerHTML = mode === 'daily' ? `<b>Daily puzzle</b> · ${dateLabel()}` : mode === 'level' ? `<b>Level ${lvl.n}</b>` : '<b>Free play</b>';
     $('movesStat').hidden = mode !== 'level'; $('bestStat').hidden = mode === 'level';
     cur.start(api, mode === 'level' ? lvl : null);
     // the very first free game starts on a friendlier board (same rules)
@@ -421,7 +421,7 @@ const LAB = (() => {
     if (mode === 'level') {
       setMoves(lvl.moves);
       // say the assignment at the start of a level
-      if (!tut) { coach('Opdracht: ' + lvl.goals.map(g => g.k === 'score' ? `haal ${fmt(g.n)} punten` : cur.goalDesc(g)).join(' en ') + '.'); coachTimer = setTimeout(() => { if (!tut) coach(null); }, 3800); }
+      if (!tut) { coach('Goal: ' + lvl.goals.map(g => g.k === 'score' ? `score ${fmt(g.n)} points` : cur.goalDesc(g)).join(' and ') + '.'); coachTimer = setTimeout(() => { if (!tut) coach(null); }, 3800); }
     }
   }
   function show(id) {
@@ -436,26 +436,26 @@ const LAB = (() => {
     $('homeStars').textContent = fmt(totalStars());
     $('homeBest').textContent = fmt(store.get('best', 0));
     const d = store.get('daily_' + today(), null);
-    $('dailyDate').textContent = d == null ? 'nog niet gespeeld' : fmt(d) + ' punten';
+    $('dailyDate').textContent = d == null ? 'not played yet' : fmt(d) + ' points';
     $('dailyDay').textContent = new Date().getDate();
     $('playBtn').textContent = 'Level ' + unlocked();
   }
   // time until the next daily puzzle
-  function untilTomorrow() { const n = new Date(), m = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1), t = Math.max(0, m - n); return `${Math.floor(t / 3600000)} u ${Math.floor(t / 60000) % 60} min`; }
-  const dateLabel = () => new Date().toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' });
+  function untilTomorrow() { const n = new Date(), m = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1), t = Math.max(0, m - n); return `${Math.floor(t / 3600000)} h ${Math.floor(t / 60000) % 60} min`; }
+  const dateLabel = () => new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'long' });
   async function share(text, btn) {
     try { if (navigator.share) { await navigator.share({ text }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
-    try { await navigator.clipboard.writeText(text); const t = btn.textContent; btn.textContent = 'Gekopieerd!'; setTimeout(() => btn.textContent = t, 1800); } catch {}
+    try { await navigator.clipboard.writeText(text); const t = btn.textContent; btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = t, 1800); } catch {}
   }
   const link = () => APPURL ? '\n' + APPURL : '';
-  const shareDaily = btn => share(`${APPNAME} · dagpuzzel ${dateLabel()}\n${fmt(store.get('daily_' + today(), 0))} punten\nKun jij het beter?${link()}`, btn);
-  const shareLevel = btn => { const r = lvl.result || { st: 1 }; share(`${APPNAME} · level ${lvl.n} ${'⭐'.repeat(r.st)}\n${fmt(score)} punten\nKun jij het beter?${link()}`, btn); };
+  const shareDaily = btn => share(`${APPNAME} · daily puzzle ${dateLabel()}\n${fmt(store.get('daily_' + today(), 0))} points\nCan you beat it?${link()}`, btn);
+  const shareLevel = btn => { const r = lvl.result || { st: 1 }; share(`${APPNAME} · level ${lvl.n} ${'⭐'.repeat(r.st)}\n${fmt(score)} points\nCan you beat it?${link()}`, btn); };
   let dailyTimer = 0;
   function dailyResult(open) {
     clearInterval(dailyTimer); $('dailySheet').hidden = !open; if (!open) return;
-    $('dsTitle').textContent = 'Dagpuzzel ' + dateLabel();
+    $('dsTitle').textContent = 'Daily puzzle · ' + dateLabel();
     $('dsScore').textContent = fmt(store.get('daily_' + today(), 0));
-    const tick = () => $('dsNext').textContent = 'Nieuwe puzzel over ' + untilTomorrow(); tick(); dailyTimer = setInterval(tick, 20000);
+    const tick = () => $('dsNext').textContent = 'Next puzzle in ' + untilTomorrow(); tick(); dailyTimer = setInterval(tick, 20000);
   }
   function play(m, n) {
     if (m === 'daily' && store.get('daily_' + today(), null) != null) return dailyResult(true);
@@ -472,7 +472,7 @@ const LAB = (() => {
   function levels(open) {
     $('levelsSheet').hidden = !open; if (!open) return;
     const grid = $('lvGrid'), all = stars(), top = unlocked(); grid.innerHTML = '';
-    $('lvStars').textContent = `${fmt(totalStars())} van ${fmt((top - 1) * 3)} sterren`;
+    $('lvStars').textContent = `${fmt(totalStars())} of ${fmt((top - 1) * 3)} stars`;
     for (let n = 1; n <= top + 3; n++) {
       const b = document.createElement('button'), s = all[n] || 0;
       b.className = 'lv' + (n > top ? ' locked' : '') + (n === top ? ' next' : ''); b.disabled = n > top;

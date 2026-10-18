@@ -1,17 +1,17 @@
 // ---------- 2. SeamShift ----------
 GAMES.push({
   id: 'seamshift', name: 'SeamShift',
-  pitch: 'Kies een naad. Het bord knijpt ernaartoe en gelijke tegels knallen.',
-  controls: 'Swipe langs een lijn tussen de vakjes',
+  pitch: 'Pick a seam. The board squeezes in and matching tiles pop.',
+  controls: 'Swipe along a line between the tiles',
   rules: [
-    { t: 'Kies een naad', d: 'Swipe langs een lijn tussen twee rijen of kolommen. Die lijn wordt de naad.' },
-    { t: 'Het bord knijpt samen', d: 'De tegels aan beide kanten van de naad schuiven tegen elkaar aan.' },
-    { t: 'Gelijke tegels knallen', d: 'Komen twee dezelfde tegels tegenover elkaar, dan knallen ze weg en schuiven er nieuwe in.' },
-    { t: 'Maak kettingen', d: 'Ontstaan er daarna weer paren aan de naad, dan gaat het door en krijg je extra punten.' },
-    { t: 'Haal de opdracht', d: 'Elk level heeft een opdracht, zoals een aantal rode tegels knallen. Lukt het binnen de zetten, dan ga je door. Hoe meer zetten over, hoe meer sterren.' },
-    { t: 'Vrij spelen', d: 'Zonder opdracht spelen kan ook. Dan geven meerdere paren tegelijk zetten terug.' },
+    { t: 'Pick a seam', d: 'Swipe along a line between two rows or columns. That line becomes the seam.' },
+    { t: 'The board squeezes', d: 'The tiles on both sides of the seam slide up against each other.' },
+    { t: 'Matching tiles pop', d: 'When two matching tiles meet at the seam, they pop and new tiles slide in.' },
+    { t: 'Make chains', d: 'If new pairs form at the seam, it keeps going and you score bonus points.' },
+    { t: 'Reach the goal', d: 'Every level has a goal, like popping a number of red tiles. Make it within the moves to move on. The more moves to spare, the more stars.' },
+    { t: 'Free play', d: 'You can also play without a goal. There, several pairs at once give you moves back.' },
   ],
-  why: 'Je kiest niet alleen een richting, maar ook waar de twee helften botsen.',
+  why: 'You pick not just a direction, but where the two halves collide.',
   start(api, cfg) {
     this.n = 4; this.nid = 1; this.sp = new Map();
     this.b = H.make(6, 6, (x, y) => this.tile(api.rnd(this.n), x, y));
@@ -24,7 +24,7 @@ GAMES.push({
     return t;
   },
   get movesLeft() { return this.moves; },
-  hud(api) { if (api.mode === 'level') { api.info(''); api.setMoves(this.moves); } else api.info(`Nog ${this.moves} zetten`); },
+  hud(api) { if (api.mode === 'level') { api.info(''); api.setMoves(this.moves); } else api.info(`${this.moves} ${this.moves === 1 ? 'move' : 'moves'} left`); },
   seamFrom(dir, p) {
     const G = LAB.api.grid(6, 6), f = p ? G.cellF(p.x, p.y) : { c: 3, r: 3 };
     if (dir === 'up' || dir === 'down') return { v: true, k: Math.max(1, Math.min(5, Math.round(f.c))) };
@@ -107,7 +107,7 @@ GAMES.push({
     this.moves += bonus;
     this.phase(1, () => {
       if (wave >= 2) api.collect('chain', null, 1, api.W / 2, api.W / 2, api.accent);
-      if (bonus) api.float('+' + bonus + (bonus === 1 ? ' zet' : ' zetten'), api.W / 2, api.W * 0.2, 0.9);
+      if (bonus) api.float('+' + bonus + (bonus === 1 ? ' move' : ' moves'), api.W / 2, api.W * 0.2, 0.9);
       this.hud(api); api.turnEnd(this.moves); return [];
     });
   },
@@ -153,12 +153,12 @@ GAMES.push({
   },
 });
 
-const WORDS = ['Mooi!', 'Super!', 'Geweldig!', 'Fantastisch!', 'Ongelooflijk!'];
+const WORDS = ['Nice!', 'Great!', 'Awesome!', 'Fantastic!', 'Incredible!'];
 
 // ---------- levels: [moves, moves left for 2 stars, for 3 stars, ...goals]; a goal is [kind, amount, colour].
 // Move limits come from simulated play (scratchpad sim/seam-gen.js): early levels nearly always work out, later ones get tighter.
 const SEAM_LEVELS = [[6,2,4,["t",12]],[15,6,8,["t",10,0]],[10,6,7,["s",500]],[12,4,5,["t",12,3]],[8,5,6,["c",2]],[14,4,6,["t",10,0],["t",10,2]],[11,4,5,["t",40]],[18,5,8,["s",900]],[17,5,7,["t",18,1]],[10,4,5,["c",3],["t",10,3]],[17,5,7,["t",16,2]],[10,3,4,["t",12,0],["t",12,1]],[20,5,7,["s",1100]],[13,5,7,["c",4]],[15,3,5,["t",14,3],["t",14,2],["t",8,0]],[11,4,5,["t",10,0],["t",10,2],["t",10,1]],[13,4,5,["t",57]],[16,4,6,["t",22,2]],[13,4,5,["t",16,3],["t",16,1]],[11,3,4,["s",700]],[14,5,6,["c",5],["t",12,1]],[11,3,4,["t",12,2],["t",12,0],["t",12,3]],[14,3,4,["t",63]],[17,2,4,["t",24,0]],[14,1,3,["t",18,1],["t",18,3]],[13,3,5,["s",800]],[13,3,5,["c",5],["t",14,3]],[12,2,4,["t",12,0],["t",12,2],["t",12,1]],[13,2,3,["t",69]],[18,2,3,["t",26,2]],[13,2,4,["t",20,3],["t",20,1]],[13,2,4,["s",900]],[17,4,6,["c",6],["t",14,1]],[15,2,3,["t",14,2],["t",14,0],["t",14,3]],[12,1,2,["t",75]],[20,3,5,["t",28,0]],[15,2,4,["t",22,1],["t",22,3]],[14,2,4,["s",1000]],[16,3,6,["c",6],["t",16,3]],[15,1,3,["t",16,0],["t",16,2],["t",16,1]],[15,2,4,["t",81]],[22,2,4,["t",30,2]],[15,2,3,["t",22,3],["t",22,1]],[17,2,4,["s",1100]],[15,2,4,["c",7],["t",18,1]],[13,2,3,["t",16,2],["t",16,0],["t",16,3]],[15,2,3,["t",87]],[23,2,4,["t",34,0]],[16,2,3,["t",24,1],["t",24,3]],[15,1,3,["s",1200]],[16,2,4,["c",7],["t",18,3]],[11,2,3,["t",18,0],["t",18,2],["t",18,1]],[16,1,3,["t",90]],[27,2,4,["t",36,2]],[17,2,3,["t",26,3],["t",26,1]],[19,2,5,["s",1300]],[18,3,5,["c",7],["t",20,1]],[15,1,3,["t",18,2],["t",18,0],["t",18,3]],[15,1,2,["t",90]],[21,1,3,["t",38,0]]];
-const COLOR_NAMES = ['rode', 'oranje', 'groene', 'blauwe'];
+const COLOR_NAMES = ['red', 'orange', 'green', 'blue'];
 Object.assign(GAMES[GAMES.length - 1], {
   level(n) {
     const r = SEAM_LEVELS[n <= SEAM_LEVELS.length ? n - 1 : 20 + (n - 61) % 40];
@@ -166,12 +166,12 @@ Object.assign(GAMES[GAMES.length - 1], {
     return { moves: r[0], s2: r[1], s3: r[2], goals: r.slice(3).map(([k, amt, v]) => ({ k: kinds[k], n: amt, v: v == null ? null : v })) };
   },
   goalDesc(g) {
-    if (g.k === 'chain') return `maak ${g.n} ${g.n === 1 ? 'ketting' : 'kettingen'}`;
-    return `knal ${g.n} ${g.v == null ? '' : COLOR_NAMES[g.v] + ' '}tegels`;
+    if (g.k === 'chain') return `make ${g.n} ${g.n === 1 ? 'chain' : 'chains'}`;
+    return `pop ${g.n} ${g.v == null ? '' : COLOR_NAMES[g.v] + ' '}tiles`;
   },
   goalText(g, left) {
-    if (g.k === 'chain') return `${left} ${left === 1 ? 'ketting' : 'kettingen'}`;
-    return `${left} ${g.v == null ? '' : COLOR_NAMES[g.v] + ' '}${left === 1 ? 'tegel' : 'tegels'}`;
+    if (g.k === 'chain') return `${left} more ${left === 1 ? 'chain' : 'chains'}`;
+    return `${left} more ${g.v == null ? '' : COLOR_NAMES[g.v] + ' '}${left === 1 ? 'tile' : 'tiles'}`;
   },
   // the small picture on a goal chip, drawn in a 100 x 100 box
   goalIcon(c, g, api) {
@@ -214,9 +214,9 @@ Object.assign(GAMES[GAMES.length - 1], {
       ctx.globalAlpha = 1;
     };
     return [
-      { text: 'Swipe omlaag langs de lichtende lijn.', hint, done: () => api.score > 0 },
-      { text: 'Gelijke tegels botsen en knallen weg.', wait: 4500 },
-      { text: 'Kies nu zelf een naad. Succes!', wait: 4000 },
+      { text: 'Swipe down along the glowing line.', hint, done: () => api.score > 0 },
+      { text: 'Matching tiles collide and pop.', wait: 4500 },
+      { text: 'Now pick your own seam. Good luck!', wait: 4000 },
     ];
   },
   drawLogo(c, now, api) {

@@ -4,7 +4,7 @@ h=open(src).read()
 h=re.sub(r'<link rel="preconnect"[^>]*>\n','',h)
 h=re.sub(r'<link rel="stylesheet" href="https://fonts.googleapis.com[^>]*>','<link rel="stylesheet" href="fonts.css">',h)
 h=h.replace('<meta name="claude:viewport-fit-sides" content="cover">\n','')
-doc='<!doctype html>\n<html lang="nl">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">\n'
+doc='<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">\n'
 i=h.index('</style>')+len('</style>')
 doc+=h[:i]+'\n</head>\n<body>\n'+h[i:]+'\n</body>\n</html>\n'
 os.makedirs(dst+'/fonts',exist_ok=True)

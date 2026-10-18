@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="nl">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -208,8 +208,8 @@ button.rec { padding: 10px 12px 12px; border-radius: 18px; font: inherit; }
 <section class="screen" id="home">
   <div class="col">
     <div class="home-top">
-      <button class="icon-btn" id="helpBtn" aria-label="Spelregels"><svg><use href="#i-help"/></svg></button>
-      <button class="icon-btn" id="setBtn1" aria-label="Instellingen"><svg><use href="#i-gear"/></svg></button>
+      <button class="icon-btn" id="helpBtn" aria-label="How to play"><svg><use href="#i-help"/></svg></button>
+      <button class="icon-btn" id="setBtn1" aria-label="Settings"><svg><use href="#i-gear"/></svg></button>
     </div>
     <div class="hero">
       <div class="logo-wrap"><canvas id="logo" aria-hidden="true"></canvas></div>
@@ -219,11 +219,11 @@ button.rec { padding: 10px 12px 12px; border-radius: 18px; font: inherit; }
     <div class="menu">
       <div class="records">
         <button class="rec" id="starsBtn"><span>Levels</span><b><span class="st">★</span><span id="homeStars">0</span></b></button>
-        <div class="rec"><span>Record vrij spelen</span><b id="homeBest">0</b></div>
+        <div class="rec"><span>Free play best</span><b id="homeBest">0</b></div>
       </div>
       <button class="go" id="playBtn">Level 1</button>
-      <button class="daily" id="dailyBtn"><span class="lbl"><span class="cal" id="dailyDay"></span>Dagpuzzel</span><small id="dailyDate"></small></button>
-      <button class="free" id="freeBtn">Vrij spelen<small>zonder opdracht</small></button>
+      <button class="daily" id="dailyBtn"><span class="lbl"><span class="cal" id="dailyDay"></span>Daily puzzle</span><small id="dailyDate"></small></button>
+      <button class="free" id="freeBtn">Free play<small>no goal, just play</small></button>
     </div>
   </div>
 </section>
@@ -231,12 +231,12 @@ button.rec { padding: 10px 12px 12px; border-radius: 18px; font: inherit; }
 <section class="screen" id="play" hidden>
   <div class="col">
     <div class="bar">
-      <button class="icon-btn" id="homeBtn" aria-label="Naar start"><svg><use href="#i-back"/></svg></button>
+      <button class="icon-btn" id="homeBtn" aria-label="Home"><svg><use href="#i-back"/></svg></button>
       <div class="mode" id="mode"></div>
       <div class="stats">
-        <div class="stat" id="movesStat" hidden><span id="movesLbl">Zetten</span><b id="moves">0</b></div>
+        <div class="stat" id="movesStat" hidden><span id="movesLbl">Moves</span><b id="moves">0</b></div>
         <div class="stat"><span>Score</span><b id="score">0</b></div>
-        <div class="stat" id="bestStat"><span>Record</span><b id="best">0</b></div>
+        <div class="stat" id="bestStat"><span>Best</span><b id="best">0</b></div>
       </div>
     </div>
     <div class="goals" id="goals" hidden></div>
@@ -244,52 +244,52 @@ button.rec { padding: 10px 12px 12px; border-radius: 18px; font: inherit; }
     <div class="coach" id="coach" hidden></div>
     <div class="well" id="well">
       <div class="stage" id="stage">
-        <canvas id="cv" aria-label="Speelveld"></canvas>
+        <canvas id="cv" aria-label="Game board"></canvas>
         <div class="overlay" id="over" hidden>
           <div class="over-card">
             <div class="stars" id="overStars" hidden><svg viewBox="0 0 24 24"><use href="#i-star"/></svg><svg viewBox="0 0 24 24"><use href="#i-star"/></svg><svg viewBox="0 0 24 24"><use href="#i-star"/></svg></div>
-            <h2 id="overTitle">Einde</h2>
+            <h2 id="overTitle">Game over</h2>
             <div class="big" id="finalScore">0</div>
             <p id="overText"></p>
-            <div class="row"><button class="go" id="againBtn">Nog een keer</button><div class="row2"><button id="shareBtn" hidden>Deel</button><button id="toHomeBtn">Naar start</button></div></div>
+            <div class="row"><button class="go" id="againBtn">Play again</button><div class="row2"><button id="shareBtn" hidden>Share</button><button id="toHomeBtn">Home</button></div></div>
           </div>
         </div>
       </div>
     </div>
     <div class="foot">
-      <button class="icon-btn" id="restartBtn" aria-label="Opnieuw beginnen"><svg><use href="#i-redo"/></svg></button>
+      <button class="icon-btn" id="restartBtn" aria-label="Restart"><svg><use href="#i-redo"/></svg></button>
       <span class="ctl" id="ctl"></span>
-      <button class="icon-btn" id="setBtn2" aria-label="Instellingen"><svg><use href="#i-gear"/></svg></button>
+      <button class="icon-btn" id="setBtn2" aria-label="Settings"><svg><use href="#i-gear"/></svg></button>
     </div>
   </div>
 </section>
 
 <div class="sheet-bg" id="dailySheet" hidden>
   <div class="sheet daily-res" role="dialog" aria-modal="true" aria-labelledby="dsTitle">
-    <div class="sheet-head"><h3 id="dsTitle">Dagpuzzel</h3><button class="icon-btn" id="dsClose" aria-label="Sluiten"><svg><use href="#i-close"/></svg></button></div>
-    <p class="small">Je hebt de dagpuzzel van vandaag gespeeld. Je score:</p>
+    <div class="sheet-head"><h3 id="dsTitle">Daily puzzle</h3><button class="icon-btn" id="dsClose" aria-label="Close"><svg><use href="#i-close"/></svg></button></div>
+    <p class="small">You played today's daily puzzle. Your score:</p>
     <div class="ds-score" id="dsScore">0</div>
     <p class="small" id="dsNext"></p>
-    <button class="go" id="dsShare">Deel je score</button>
+    <button class="go" id="dsShare">Share your score</button>
   </div>
 </div>
 
 <div class="sheet-bg" id="sheet" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="setTitle">
-    <div class="sheet-head"><h3 id="setTitle">Instellingen</h3><button class="icon-btn" id="closeSet" aria-label="Sluiten"><svg><use href="#i-close"/></svg></button></div>
+    <div class="sheet-head"><h3 id="setTitle">Settings</h3><button class="icon-btn" id="closeSet" aria-label="Close"><svg><use href="#i-close"/></svg></button></div>
     <div class="group">
-      <div class="toggle"><span>Geluid</span><button class="switch" id="sndSw" role="switch" aria-checked="true" aria-label="Geluid"></button></div>
-      <div class="toggle"><span>Trillen</span><button class="switch" id="vibSw" role="switch" aria-checked="true" aria-label="Trillen"></button></div>
+      <div class="toggle"><span>Sound</span><button class="switch" id="sndSw" role="switch" aria-checked="true" aria-label="Sound"></button></div>
+      <div class="toggle"><span>Vibration</span><button class="switch" id="vibSw" role="switch" aria-checked="true" aria-label="Vibration"></button></div>
     </div>
-    <button class="link-row" id="rulesBtn">Spelregels<svg><use href="#i-next"/></svg></button>
-    <button class="link-row" id="tutBtn">Uitleg opnieuw spelen<svg><use href="#i-next"/></svg></button>
-    <p class="small">Je scores worden alleen op dit toestel bewaard.</p>
+    <button class="link-row" id="rulesBtn">How to play<svg><use href="#i-next"/></svg></button>
+    <button class="link-row" id="tutBtn">Replay the tutorial<svg><use href="#i-next"/></svg></button>
+    <p class="small">Your scores are only saved on this device.</p>
   </div>
 </div>
 
 <div class="sheet-bg" id="levelsSheet" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="lvTitle">
-    <div class="sheet-head"><h3 id="lvTitle">Levels</h3><button class="icon-btn" id="closeLevels" aria-label="Sluiten"><svg><use href="#i-close"/></svg></button></div>
+    <div class="sheet-head"><h3 id="lvTitle">Levels</h3><button class="icon-btn" id="closeLevels" aria-label="Close"><svg><use href="#i-close"/></svg></button></div>
     <p class="small" id="lvStars"></p>
     <div class="lv-grid" id="lvGrid"></div>
   </div>
@@ -297,9 +297,9 @@ button.rec { padding: 10px 12px 12px; border-radius: 18px; font: inherit; }
 
 <div class="sheet-bg" id="rulesSheet" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
-    <div class="sheet-head"><h3 id="rulesTitle">Zo speel je</h3><button class="icon-btn" id="closeRules" aria-label="Sluiten"><svg><use href="#i-close"/></svg></button></div>
+    <div class="sheet-head"><h3 id="rulesTitle">How to play</h3><button class="icon-btn" id="closeRules" aria-label="Close"><svg><use href="#i-close"/></svg></button></div>
     <ol class="rules" id="rules"></ol>
-    <button class="go" id="rulesPlay">Spelen</button>
+    <button class="go" id="rulesPlay">Play</button>
   </div>
 </div>
 <script>
@@ -520,9 +520,9 @@ const LAB = (() => {
   const banner = (text, tier = 0) => { fx = fx.filter(f => f.k !== 'banner'); fx.push({ k: 'banner', text, tier: Math.min(tier, 4), life: 0, max: 1250 }); };
   const shake = a => { shakeAmt = Math.max(shakeAmt, a); };
 
-  const fmt = n => n.toLocaleString('nl-NL');
+  const fmt = n => n.toLocaleString('en-US');
   // what one move is called in this game: a move, or a weight
-  const MW = () => cur.moveWord || ['zet', 'zetten'];
+  const MW = () => cur.moveWord || ['move', 'moves'];
   const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
   const bestKey = () => mode === 'daily' ? 'daily_' + today() : 'best';
   function hud() {
@@ -537,7 +537,7 @@ const LAB = (() => {
   const goalLeft = g => g.max ? (g.got >= g.n ? 0 : 1) : Math.max(0, g.n - g.got);
   const goalsDone = () => lvl && lvl.goals.every(g => g.k === 'score' ? score >= g.n : goalLeft(g) === 0);
   function goalText(g) {
-    if (g.k === 'score') return `${fmt(Math.max(0, g.n - score))} punten`;
+    if (g.k === 'score') return `${fmt(Math.max(0, g.n - score))} more points`;
     return cur.goalText ? cur.goalText(g, goalLeft(g)) : String(goalLeft(g));
   }
   function buildChips() {
@@ -606,8 +606,8 @@ const LAB = (() => {
     // the game calls this when a turn has finished animating; movesLeft is null for games without a move limit
     turnEnd(movesLeft) {
       if (ended) return;
-      if (mode === 'level') { if (goalsDone()) return levelWin(movesLeft || 0); if (movesLeft != null && movesLeft <= 0) return api.over(`Je ${MW()[1]} zijn op.`); return; }
-      if (movesLeft != null && movesLeft <= 0) api.over('Je zetten zijn op.');
+      if (mode === 'level') { if (goalsDone()) return levelWin(movesLeft || 0); if (movesLeft != null && movesLeft <= 0) return api.over(`Out of ${MW()[1]}.`); return; }
+      if (movesLeft != null && movesLeft <= 0) api.over('Out of moves.');
     },
     over(reason) {
       if (ended) return; ended = true;
@@ -621,13 +621,13 @@ const LAB = (() => {
         if (!ended || !playing) return;
         coach(null);
         $('overStars').hidden = true;
-        $('overTitle').textContent = mode === 'daily' ? 'Dagpuzzel klaar' : isBest && score > 0 ? 'Nieuw record!' : close ? 'Bijna!' : 'Einde';
+        $('overTitle').textContent = mode === 'daily' ? 'Daily puzzle done' : isBest && score > 0 ? 'New best!' : close ? 'So close!' : 'Game over';
         $('overTitle').classList.toggle('new', (isBest && score > 0) || close);
         $('finalScore').textContent = fmt(score); $('finalScore').hidden = false;
         // how far from the record: the "almost" feeling that makes you try again
-        const gap = mode === 'free' && !isBest && prev > 0 ? ` Nog ${fmt(prev - score + 1)} punten tot je record.` : '';
-        $('overText').textContent = (reason || '') + gap + (mode === 'daily' ? ' Morgen staat er een nieuwe dagpuzzel klaar.' : '');
-        $('againBtn').textContent = mode === 'daily' ? 'Deel je score' : 'Nog een keer';
+        const gap = mode === 'free' && !isBest && prev > 0 ? ` ${fmt(prev - score + 1)} more points to beat your best.` : '';
+        $('overText').textContent = (reason || '') + gap + (mode === 'daily' ? ' A new daily puzzle is waiting tomorrow.' : '');
+        $('againBtn').textContent = mode === 'daily' ? 'Share your score' : 'Play again';
         $('shareBtn').hidden = true;
         openOver();
       }, 600);
@@ -649,7 +649,7 @@ const LAB = (() => {
   function levelWin(left) {
     ended = true; coach(null); $('movesStat').classList.remove('low');
     const n = lvl.n, st = left >= lvl.s3 ? 3 : left >= lvl.s2 ? 2 : 1;
-    sfx('win'); buzz('success'); confetti(); banner('Level gehaald!', 1);
+    sfx('win'); buzz('success'); confetti(); banner('Level complete!', 1);
     // save right away: closing the app during the celebration keeps the stars
     const all = stars(); all[n] = Math.max(all[n] || 0, st); store.set('stars', all);
     if (unlocked() <= n) store.set('level', n + 1);
@@ -669,10 +669,10 @@ const LAB = (() => {
   }
   function showWin(st, left) {
     if (!playing || mode !== 'level') return;
-    $('overTitle').textContent = `Level ${lvl.n} gehaald!`; $('overTitle').classList.add('new');
+    $('overTitle').textContent = `Level ${lvl.n} complete!`; $('overTitle').classList.add('new');
     $('finalScore').textContent = fmt(score); $('finalScore').hidden = false;
-    $('overText').textContent = left ? `Met ${left} ${MW()[left === 1 ? 0 : 1]} over.` : 'Precies op tijd!';
-    $('againBtn').textContent = 'Volgende level';
+    $('overText').textContent = left ? `${left} ${MW()[left === 1 ? 0 : 1]} to spare.` : 'Just in time!';
+    $('againBtn').textContent = 'Next level';
     $('shareBtn').hidden = false;
     const box = $('overStars'); box.hidden = false;
     [...box.children].forEach((s, k) => { s.classList.remove('on'); if (k < st) later(() => { s.classList.add('on'); sfx('star', k); buzz('medium'); }, 450 + k * 380); });
@@ -689,10 +689,10 @@ const LAB = (() => {
       if (!ended || !playing) return;
       coach(null);
       $('overStars').hidden = true;
-      $('overTitle').textContent = close ? 'Bijna!' : `Level ${lvl.n}`; $('overTitle').classList.toggle('new', close);
+      $('overTitle').textContent = close ? 'So close!' : `Level ${lvl.n}`; $('overTitle').classList.toggle('new', close);
       $('finalScore').hidden = true;
-      $('overText').textContent = (reason ? reason + ' ' : '') + (missing.length ? 'Je had nog nodig: ' + missing.map(goalText).join(' en ') + '.' : '');
-      $('againBtn').textContent = 'Opnieuw'; $('shareBtn').hidden = true;
+      $('overText').textContent = (reason ? reason + ' ' : '') + (missing.length ? 'You still needed ' + missing.map(goalText).join(' and ') + '.' : '');
+      $('againBtn').textContent = 'Try again'; $('shareBtn').hidden = true;
       openOver();
     }, 600);
   }
@@ -714,7 +714,7 @@ const LAB = (() => {
     $('over').hidden = true; api.info(''); coach(null);
     rng = mode === 'daily' ? seeded(hash(today() + cur.id)) : mode === 'level' ? seeded(hash('L' + lvl.n + cur.id)) : Math.random;
     if (lvl) { lvl.result = null; lvl.goals.forEach(g => { g.got = 0; g.shown = 0; }); }
-    $('mode').innerHTML = mode === 'daily' ? `<b>Dagpuzzel</b> · ${new Date().toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })}` : mode === 'level' ? `<b>Level ${lvl.n}</b>` : '<b>Vrij spelen</b>';
+    $('mode').innerHTML = mode === 'daily' ? `<b>Daily puzzle</b> · ${dateLabel()}` : mode === 'level' ? `<b>Level ${lvl.n}</b>` : '<b>Free play</b>';
     $('movesStat').hidden = mode !== 'level'; $('bestStat').hidden = mode === 'level';
     cur.start(api, mode === 'level' ? lvl : null);
     // the very first free game starts on a friendlier board (same rules)
@@ -726,7 +726,7 @@ const LAB = (() => {
     if (mode === 'level') {
       setMoves(lvl.moves);
       // say the assignment at the start of a level
-      if (!tut) { coach('Opdracht: ' + lvl.goals.map(g => g.k === 'score' ? `haal ${fmt(g.n)} punten` : cur.goalDesc(g)).join(' en ') + '.'); coachTimer = setTimeout(() => { if (!tut) coach(null); }, 3800); }
+      if (!tut) { coach('Goal: ' + lvl.goals.map(g => g.k === 'score' ? `score ${fmt(g.n)} points` : cur.goalDesc(g)).join(' and ') + '.'); coachTimer = setTimeout(() => { if (!tut) coach(null); }, 3800); }
     }
   }
   function show(id) {
@@ -741,26 +741,26 @@ const LAB = (() => {
     $('homeStars').textContent = fmt(totalStars());
     $('homeBest').textContent = fmt(store.get('best', 0));
     const d = store.get('daily_' + today(), null);
-    $('dailyDate').textContent = d == null ? 'nog niet gespeeld' : fmt(d) + ' punten';
+    $('dailyDate').textContent = d == null ? 'not played yet' : fmt(d) + ' points';
     $('dailyDay').textContent = new Date().getDate();
     $('playBtn').textContent = 'Level ' + unlocked();
   }
   // time until the next daily puzzle
-  function untilTomorrow() { const n = new Date(), m = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1), t = Math.max(0, m - n); return `${Math.floor(t / 3600000)} u ${Math.floor(t / 60000) % 60} min`; }
-  const dateLabel = () => new Date().toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' });
+  function untilTomorrow() { const n = new Date(), m = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1), t = Math.max(0, m - n); return `${Math.floor(t / 3600000)} h ${Math.floor(t / 60000) % 60} min`; }
+  const dateLabel = () => new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'long' });
   async function share(text, btn) {
     try { if (navigator.share) { await navigator.share({ text }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
-    try { await navigator.clipboard.writeText(text); const t = btn.textContent; btn.textContent = 'Gekopieerd!'; setTimeout(() => btn.textContent = t, 1800); } catch {}
+    try { await navigator.clipboard.writeText(text); const t = btn.textContent; btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = t, 1800); } catch {}
   }
   const link = () => APPURL ? '\n' + APPURL : '';
-  const shareDaily = btn => share(`${APPNAME} · dagpuzzel ${dateLabel()}\n${fmt(store.get('daily_' + today(), 0))} punten\nKun jij het beter?${link()}`, btn);
-  const shareLevel = btn => { const r = lvl.result || { st: 1 }; share(`${APPNAME} · level ${lvl.n} ${'⭐'.repeat(r.st)}\n${fmt(score)} punten\nKun jij het beter?${link()}`, btn); };
+  const shareDaily = btn => share(`${APPNAME} · daily puzzle ${dateLabel()}\n${fmt(store.get('daily_' + today(), 0))} points\nCan you beat it?${link()}`, btn);
+  const shareLevel = btn => { const r = lvl.result || { st: 1 }; share(`${APPNAME} · level ${lvl.n} ${'⭐'.repeat(r.st)}\n${fmt(score)} points\nCan you beat it?${link()}`, btn); };
   let dailyTimer = 0;
   function dailyResult(open) {
     clearInterval(dailyTimer); $('dailySheet').hidden = !open; if (!open) return;
-    $('dsTitle').textContent = 'Dagpuzzel ' + dateLabel();
+    $('dsTitle').textContent = 'Daily puzzle · ' + dateLabel();
     $('dsScore').textContent = fmt(store.get('daily_' + today(), 0));
-    const tick = () => $('dsNext').textContent = 'Nieuwe puzzel over ' + untilTomorrow(); tick(); dailyTimer = setInterval(tick, 20000);
+    const tick = () => $('dsNext').textContent = 'Next puzzle in ' + untilTomorrow(); tick(); dailyTimer = setInterval(tick, 20000);
   }
   function play(m, n) {
     if (m === 'daily' && store.get('daily_' + today(), null) != null) return dailyResult(true);
@@ -777,7 +777,7 @@ const LAB = (() => {
   function levels(open) {
     $('levelsSheet').hidden = !open; if (!open) return;
     const grid = $('lvGrid'), all = stars(), top = unlocked(); grid.innerHTML = '';
-    $('lvStars').textContent = `${fmt(totalStars())} van ${fmt((top - 1) * 3)} sterren`;
+    $('lvStars').textContent = `${fmt(totalStars())} of ${fmt((top - 1) * 3)} stars`;
     for (let n = 1; n <= top + 3; n++) {
       const b = document.createElement('button'), s = all[n] || 0;
       b.className = 'lv' + (n > top ? ' locked' : '') + (n === top ? ' next' : ''); b.disabled = n > top;
@@ -1063,23 +1063,23 @@ Anim.clip = (api, G, cols, rows, fn) => { const { ctx } = api; ctx.save(); ctx.b
 // ---------- 15. Balance Stack ----------
 GAMES.push({
   id: 'balancestack', name: 'Balance Stack',
-  pitch: 'Bouw hoger zonder dat de wip omslaat.',
-  controls: 'Tik boven een plek om het gewicht te laten vallen',
+  pitch: 'Stack higher without tipping the seesaw.',
+  controls: 'Tap above a spot to drop the weight',
   rules: [
-    { t: 'Laat een gewicht vallen', d: 'Tik boven een van de zeven plekken op de wip. Het gewicht bovenin valt daar.' },
-    { t: 'Afstand telt', d: 'Hoe verder van het midden, hoe harder het gewicht aan de wip trekt.' },
-    { t: 'Gelijke gewichten smelten', d: 'Twee gelijke gewichten op elkaar worden één gewicht dat twee keer zo zwaar is.' },
-    { t: 'Zoek de balans', d: 'Staat de wip precies recht, dan krijg je bonuspunten.' },
-    { t: 'Pas op', d: 'Slaat de wip te ver door, of wordt een stapel te hoog, dan ben je af.' },
-    { t: 'Haal de opdracht', d: 'Elk level heeft een opdracht, zoals een gewicht van 8 maken. Je krijgt een vast aantal gewichten. Hoe meer je overhoudt, hoe meer sterren.' },
+    { t: 'Drop a weight', d: 'Tap above one of the seven spots on the seesaw. The weight at the top drops there.' },
+    { t: 'Distance matters', d: 'The further from the middle, the harder a weight pulls on the seesaw.' },
+    { t: 'Equal weights merge', d: 'Two equal weights on top of each other become one weight, twice as heavy.' },
+    { t: 'Find the balance', d: 'When the seesaw is perfectly level, you score bonus points.' },
+    { t: 'Careful', d: 'If the seesaw tips too far, or a stack gets too tall, the game is over.' },
+    { t: 'Reach the goal', d: 'Every level has a goal, like making a weight of 8. You get a set number of weights. The more you have left, the more stars.' },
   ],
-  why: 'Leuk om naar te kijken, maar natuurkunde maakt het lastiger om goed af te stellen.',
+  why: 'Fun to watch, but physics makes it harder to tune.',
   start(api, cfg) { Anim.setup(this); this.st = Array.from({ length: 7 }, () => []); this.slot = 3; this.limit = 16; this.shownT = 0; this.ang = 0; this.left = cfg ? cfg.moves : null; this.next(api); this.hud(api); },
   get movesLeft() { return this.left; },
-  moveWord: ['gewicht', 'gewichten'],
+  moveWord: ['weight', 'weights'],
   next(api) { const r = api.rand(); this.cur = r < 0.55 ? 1 : r < 0.9 ? 2 : 3; this.ct0 = performance.now(); },
   torque() { return this.st.reduce((a, s, i) => a + (i - 3) * s.reduce((x, t) => x + Math.pow(2, t.v - 1), 0), 0); },
-  hud(api) { const t = this.torque(); api.info(`Kanteling ${t > 0 ? '→' : t < 0 ? '←' : '•'} ${Math.abs(t)}/${this.limit}`); if (this.left != null) api.setMoves(this.left); },
+  hud(api) { const t = this.torque(); api.info(`Tilt ${t > 0 ? '→' : t < 0 ? '←' : '•'} ${Math.abs(t)}/${this.limit}`); if (this.left != null) api.setMoves(this.left); },
   // a crisp tick when your finger moves to another spot
   pick(p) { const s = this.slotAt(p); if (s !== this.slot) LAB.api.buzz('select'); this.slot = s; },
   slotAt(p) { return Math.max(0, Math.min(6, Math.floor((p.x / LAB.api.W - 0.08) / 0.84 * 7))); },
@@ -1104,7 +1104,7 @@ GAMES.push({
         this.sp.delete(top.id); const b = Anim.s(this, below); b.l = nv;
         const [x, y] = this.slotXY(slot, hb); api.burst(x, y, api.COLORS[nv % 6], 14, 1 + m * 0.2); api.sfx('merge', nv + m); api.buzz(m >= 2 ? 'heavy' : 'medium');
         api.collect('merge', null, 1, x, y, api.COLORS[nv % 6]); api.collect('make', null, nv, x, y, api.COLORS[nv % 6]);
-        if (m >= 2) api.banner(['Super!', 'Geweldig!', 'Fantastisch!'][Math.min(m - 2, 2)], m - 1);
+        if (m >= 2) api.banner(['Great!', 'Awesome!', 'Fantastic!'][Math.min(m - 2, 2)], m - 1);
         return [[b, { sc: 1.4 }]];
       });
       Anim.phase(this, 220, () => [[Anim.s(this, below), { sc: 1 }]], 'bounce');
@@ -1117,8 +1117,8 @@ GAMES.push({
       if (merges) { api.add(10 * Math.pow(2, last) * merges, x, y); api.buzz(10); }
       if (tq === 0 && this.st.some(q => q.length)) { api.add(25); api.float('Perfect!', api.W / 2, api.W * 0.9, 1.3); api.sfx('star', 1); api.collect('perfect', null, 1, api.W / 2, api.W * 0.72, api.accent); }
       this.hud(api); this.next(api);
-      if (Math.abs(tq) > this.limit) { api.shake(14); api.buzz('heavy'); return api.over('De wip sloeg om.'); }
-      if (h > 6) return api.over('Een stapel werd te hoog.');
+      if (Math.abs(tq) > this.limit) { api.shake(14); api.buzz('heavy'); return api.over('The seesaw tipped over.'); }
+      if (h > 6) return api.over('A stack got too tall.');
       api.turnEnd(this.left);
     });
   },
@@ -1180,14 +1180,14 @@ Object.assign(GAMES[GAMES.length - 1], {
     return { moves: r[0], s2: r[1], s3: r[2], goals: r.slice(3).map(([k, amt]) => ({ k: kinds[k], n: amt, max: k === 'm' })) };
   },
   goalDesc(g) {
-    if (g.k === 'make') return `maak een gewicht van ${2 ** (g.n - 1)}`;
-    if (g.k === 'merge') return `laat ${g.n} keer gewichten samensmelten`;
-    return `breng de wip ${g.n} keer precies in balans`;
+    if (g.k === 'make') return `make a weight of ${2 ** (g.n - 1)}`;
+    if (g.k === 'merge') return `merge weights ${g.n} times`;
+    return `balance the seesaw perfectly ${g.n} ${g.n === 1 ? 'time' : 'times'}`;
   },
   goalText(g, left) {
-    if (g.k === 'make') return `een gewicht van ${2 ** (g.n - 1)}`;
-    if (g.k === 'merge') return `${left} keer samensmelten`;
-    return `${left} keer precies in balans`;
+    if (g.k === 'make') return `a weight of ${2 ** (g.n - 1)}`;
+    if (g.k === 'merge') return `${left} more ${left === 1 ? 'merge' : 'merges'}`;
+    return `${left} more perfect ${left === 1 ? 'balance' : 'balances'}`;
   },
   // the small picture on a goal chip, drawn in a 100 x 100 box
   goalIcon(c, g, api) {
@@ -1214,9 +1214,9 @@ Object.assign(GAMES[GAMES.length - 1], {
       ctx.beginPath(); ctx.moveTo(x, y + W * 0.05); ctx.lineTo(x - W * 0.035, y); ctx.lineTo(x + W * 0.035, y); ctx.closePath(); ctx.stroke(); ctx.fill();
     };
     return [
-      { text: 'Tik boven het midden.', hint, done: () => this.st.flat().length !== 1 || this.st[3].length !== 1 || this.st[3][0].v !== 1 },
-      { text: 'Gelijke gewichten smelten samen.', wait: 4200 },
-      { text: 'Ver van het midden trekt harder. Houd de wip in balans!', wait: 4500 },
+      { text: 'Tap above the middle.', hint, done: () => this.st.flat().length !== 1 || this.st[3].length !== 1 || this.st[3][0].v !== 1 },
+      { text: 'Equal weights merge together.', wait: 4200 },
+      { text: 'Far from the middle pulls harder. Keep the seesaw level!', wait: 4500 },
     ];
   },
   drawLogo(c, now, api) {
@@ -1241,7 +1241,7 @@ Object.assign(GAMES[GAMES.length - 1], {
   g.start = function (api, cfg) { this.easy = null; start0.call(this, api, cfg); };
   g.next = function (api) { if (this.easy && this.easy.length) { this.cur = this.easy.shift(); this.ct0 = performance.now(); return; } next0.call(this, api); };
 }
-LAB.boot({ key: 'balanceapp', name: 'Balance Stack', pitch: 'Laat gewichten vallen, smelt ze samen en houd de wip in balans.', url: 'https://puzzellab-test.vercel.app/balance/' });
+LAB.boot({ key: 'balanceapp', name: 'Balance Stack', pitch: 'Drop weights, merge them and keep the seesaw level.', url: 'https://puzzellab-test.vercel.app/balance/' });
 </script>
 
 </body>

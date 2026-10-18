@@ -1,23 +1,23 @@
 // ---------- 15. Balance Stack ----------
 GAMES.push({
   id: 'balancestack', name: 'Balance Stack',
-  pitch: 'Bouw hoger zonder dat de wip omslaat.',
-  controls: 'Tik boven een plek om het gewicht te laten vallen',
+  pitch: 'Stack higher without tipping the seesaw.',
+  controls: 'Tap above a spot to drop the weight',
   rules: [
-    { t: 'Laat een gewicht vallen', d: 'Tik boven een van de zeven plekken op de wip. Het gewicht bovenin valt daar.' },
-    { t: 'Afstand telt', d: 'Hoe verder van het midden, hoe harder het gewicht aan de wip trekt.' },
-    { t: 'Gelijke gewichten smelten', d: 'Twee gelijke gewichten op elkaar worden één gewicht dat twee keer zo zwaar is.' },
-    { t: 'Zoek de balans', d: 'Staat de wip precies recht, dan krijg je bonuspunten.' },
-    { t: 'Pas op', d: 'Slaat de wip te ver door, of wordt een stapel te hoog, dan ben je af.' },
-    { t: 'Haal de opdracht', d: 'Elk level heeft een opdracht, zoals een gewicht van 8 maken. Je krijgt een vast aantal gewichten. Hoe meer je overhoudt, hoe meer sterren.' },
+    { t: 'Drop a weight', d: 'Tap above one of the seven spots on the seesaw. The weight at the top drops there.' },
+    { t: 'Distance matters', d: 'The further from the middle, the harder a weight pulls on the seesaw.' },
+    { t: 'Equal weights merge', d: 'Two equal weights on top of each other become one weight, twice as heavy.' },
+    { t: 'Find the balance', d: 'When the seesaw is perfectly level, you score bonus points.' },
+    { t: 'Careful', d: 'If the seesaw tips too far, or a stack gets too tall, the game is over.' },
+    { t: 'Reach the goal', d: 'Every level has a goal, like making a weight of 8. You get a set number of weights. The more you have left, the more stars.' },
   ],
-  why: 'Leuk om naar te kijken, maar natuurkunde maakt het lastiger om goed af te stellen.',
+  why: 'Fun to watch, but physics makes it harder to tune.',
   start(api, cfg) { Anim.setup(this); this.st = Array.from({ length: 7 }, () => []); this.slot = 3; this.limit = 16; this.shownT = 0; this.ang = 0; this.left = cfg ? cfg.moves : null; this.next(api); this.hud(api); },
   get movesLeft() { return this.left; },
-  moveWord: ['gewicht', 'gewichten'],
+  moveWord: ['weight', 'weights'],
   next(api) { const r = api.rand(); this.cur = r < 0.55 ? 1 : r < 0.9 ? 2 : 3; this.ct0 = performance.now(); },
   torque() { return this.st.reduce((a, s, i) => a + (i - 3) * s.reduce((x, t) => x + Math.pow(2, t.v - 1), 0), 0); },
-  hud(api) { const t = this.torque(); api.info(`Kanteling ${t > 0 ? '→' : t < 0 ? '←' : '•'} ${Math.abs(t)}/${this.limit}`); if (this.left != null) api.setMoves(this.left); },
+  hud(api) { const t = this.torque(); api.info(`Tilt ${t > 0 ? '→' : t < 0 ? '←' : '•'} ${Math.abs(t)}/${this.limit}`); if (this.left != null) api.setMoves(this.left); },
   // a crisp tick when your finger moves to another spot
   pick(p) { const s = this.slotAt(p); if (s !== this.slot) LAB.api.buzz('select'); this.slot = s; },
   slotAt(p) { return Math.max(0, Math.min(6, Math.floor((p.x / LAB.api.W - 0.08) / 0.84 * 7))); },
@@ -42,7 +42,7 @@ GAMES.push({
         this.sp.delete(top.id); const b = Anim.s(this, below); b.l = nv;
         const [x, y] = this.slotXY(slot, hb); api.burst(x, y, api.COLORS[nv % 6], 14, 1 + m * 0.2); api.sfx('merge', nv + m); api.buzz(m >= 2 ? 'heavy' : 'medium');
         api.collect('merge', null, 1, x, y, api.COLORS[nv % 6]); api.collect('make', null, nv, x, y, api.COLORS[nv % 6]);
-        if (m >= 2) api.banner(['Super!', 'Geweldig!', 'Fantastisch!'][Math.min(m - 2, 2)], m - 1);
+        if (m >= 2) api.banner(['Great!', 'Awesome!', 'Fantastic!'][Math.min(m - 2, 2)], m - 1);
         return [[b, { sc: 1.4 }]];
       });
       Anim.phase(this, 220, () => [[Anim.s(this, below), { sc: 1 }]], 'bounce');
@@ -55,8 +55,8 @@ GAMES.push({
       if (merges) { api.add(10 * Math.pow(2, last) * merges, x, y); api.buzz(10); }
       if (tq === 0 && this.st.some(q => q.length)) { api.add(25); api.float('Perfect!', api.W / 2, api.W * 0.9, 1.3); api.sfx('star', 1); api.collect('perfect', null, 1, api.W / 2, api.W * 0.72, api.accent); }
       this.hud(api); this.next(api);
-      if (Math.abs(tq) > this.limit) { api.shake(14); api.buzz('heavy'); return api.over('De wip sloeg om.'); }
-      if (h > 6) return api.over('Een stapel werd te hoog.');
+      if (Math.abs(tq) > this.limit) { api.shake(14); api.buzz('heavy'); return api.over('The seesaw tipped over.'); }
+      if (h > 6) return api.over('A stack got too tall.');
       api.turnEnd(this.left);
     });
   },
@@ -118,14 +118,14 @@ Object.assign(GAMES[GAMES.length - 1], {
     return { moves: r[0], s2: r[1], s3: r[2], goals: r.slice(3).map(([k, amt]) => ({ k: kinds[k], n: amt, max: k === 'm' })) };
   },
   goalDesc(g) {
-    if (g.k === 'make') return `maak een gewicht van ${2 ** (g.n - 1)}`;
-    if (g.k === 'merge') return `laat ${g.n} keer gewichten samensmelten`;
-    return `breng de wip ${g.n} keer precies in balans`;
+    if (g.k === 'make') return `make a weight of ${2 ** (g.n - 1)}`;
+    if (g.k === 'merge') return `merge weights ${g.n} times`;
+    return `balance the seesaw perfectly ${g.n} ${g.n === 1 ? 'time' : 'times'}`;
   },
   goalText(g, left) {
-    if (g.k === 'make') return `een gewicht van ${2 ** (g.n - 1)}`;
-    if (g.k === 'merge') return `${left} keer samensmelten`;
-    return `${left} keer precies in balans`;
+    if (g.k === 'make') return `a weight of ${2 ** (g.n - 1)}`;
+    if (g.k === 'merge') return `${left} more ${left === 1 ? 'merge' : 'merges'}`;
+    return `${left} more perfect ${left === 1 ? 'balance' : 'balances'}`;
   },
   // the small picture on a goal chip, drawn in a 100 x 100 box
   goalIcon(c, g, api) {
@@ -152,9 +152,9 @@ Object.assign(GAMES[GAMES.length - 1], {
       ctx.beginPath(); ctx.moveTo(x, y + W * 0.05); ctx.lineTo(x - W * 0.035, y); ctx.lineTo(x + W * 0.035, y); ctx.closePath(); ctx.stroke(); ctx.fill();
     };
     return [
-      { text: 'Tik boven het midden.', hint, done: () => this.st.flat().length !== 1 || this.st[3].length !== 1 || this.st[3][0].v !== 1 },
-      { text: 'Gelijke gewichten smelten samen.', wait: 4200 },
-      { text: 'Ver van het midden trekt harder. Houd de wip in balans!', wait: 4500 },
+      { text: 'Tap above the middle.', hint, done: () => this.st.flat().length !== 1 || this.st[3].length !== 1 || this.st[3][0].v !== 1 },
+      { text: 'Equal weights merge together.', wait: 4200 },
+      { text: 'Far from the middle pulls harder. Keep the seesaw level!', wait: 4500 },
     ];
   },
   drawLogo(c, now, api) {

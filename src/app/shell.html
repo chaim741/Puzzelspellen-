@@ -203,8 +203,8 @@ button.rec { padding: 10px 12px 12px; border-radius: 18px; font: inherit; }
 <section class="screen" id="home">
   <div class="col">
     <div class="home-top">
-      <button class="icon-btn" id="helpBtn" aria-label="Spelregels"><svg><use href="#i-help"/></svg></button>
-      <button class="icon-btn" id="setBtn1" aria-label="Instellingen"><svg><use href="#i-gear"/></svg></button>
+      <button class="icon-btn" id="helpBtn" aria-label="How to play"><svg><use href="#i-help"/></svg></button>
+      <button class="icon-btn" id="setBtn1" aria-label="Settings"><svg><use href="#i-gear"/></svg></button>
     </div>
     <div class="hero">
       <div class="logo-wrap"><canvas id="logo" aria-hidden="true"></canvas></div>
@@ -214,11 +214,11 @@ button.rec { padding: 10px 12px 12px; border-radius: 18px; font: inherit; }
     <div class="menu">
       <div class="records">
         <button class="rec" id="starsBtn"><span>Levels</span><b><span class="st">★</span><span id="homeStars">0</span></b></button>
-        <div class="rec"><span>Record vrij spelen</span><b id="homeBest">0</b></div>
+        <div class="rec"><span>Free play best</span><b id="homeBest">0</b></div>
       </div>
       <button class="go" id="playBtn">Level 1</button>
-      <button class="daily" id="dailyBtn"><span class="lbl"><span class="cal" id="dailyDay"></span>Dagpuzzel</span><small id="dailyDate"></small></button>
-      <button class="free" id="freeBtn">Vrij spelen<small>zonder opdracht</small></button>
+      <button class="daily" id="dailyBtn"><span class="lbl"><span class="cal" id="dailyDay"></span>Daily puzzle</span><small id="dailyDate"></small></button>
+      <button class="free" id="freeBtn">Free play<small>no goal, just play</small></button>
     </div>
   </div>
 </section>
@@ -226,12 +226,12 @@ button.rec { padding: 10px 12px 12px; border-radius: 18px; font: inherit; }
 <section class="screen" id="play" hidden>
   <div class="col">
     <div class="bar">
-      <button class="icon-btn" id="homeBtn" aria-label="Naar start"><svg><use href="#i-back"/></svg></button>
+      <button class="icon-btn" id="homeBtn" aria-label="Home"><svg><use href="#i-back"/></svg></button>
       <div class="mode" id="mode"></div>
       <div class="stats">
-        <div class="stat" id="movesStat" hidden><span id="movesLbl">Zetten</span><b id="moves">0</b></div>
+        <div class="stat" id="movesStat" hidden><span id="movesLbl">Moves</span><b id="moves">0</b></div>
         <div class="stat"><span>Score</span><b id="score">0</b></div>
-        <div class="stat" id="bestStat"><span>Record</span><b id="best">0</b></div>
+        <div class="stat" id="bestStat"><span>Best</span><b id="best">0</b></div>
       </div>
     </div>
     <div class="goals" id="goals" hidden></div>
@@ -239,52 +239,52 @@ button.rec { padding: 10px 12px 12px; border-radius: 18px; font: inherit; }
     <div class="coach" id="coach" hidden></div>
     <div class="well" id="well">
       <div class="stage" id="stage">
-        <canvas id="cv" aria-label="Speelveld"></canvas>
+        <canvas id="cv" aria-label="Game board"></canvas>
         <div class="overlay" id="over" hidden>
           <div class="over-card">
             <div class="stars" id="overStars" hidden><svg viewBox="0 0 24 24"><use href="#i-star"/></svg><svg viewBox="0 0 24 24"><use href="#i-star"/></svg><svg viewBox="0 0 24 24"><use href="#i-star"/></svg></div>
-            <h2 id="overTitle">Einde</h2>
+            <h2 id="overTitle">Game over</h2>
             <div class="big" id="finalScore">0</div>
             <p id="overText"></p>
-            <div class="row"><button class="go" id="againBtn">Nog een keer</button><div class="row2"><button id="shareBtn" hidden>Deel</button><button id="toHomeBtn">Naar start</button></div></div>
+            <div class="row"><button class="go" id="againBtn">Play again</button><div class="row2"><button id="shareBtn" hidden>Share</button><button id="toHomeBtn">Home</button></div></div>
           </div>
         </div>
       </div>
     </div>
     <div class="foot">
-      <button class="icon-btn" id="restartBtn" aria-label="Opnieuw beginnen"><svg><use href="#i-redo"/></svg></button>
+      <button class="icon-btn" id="restartBtn" aria-label="Restart"><svg><use href="#i-redo"/></svg></button>
       <span class="ctl" id="ctl"></span>
-      <button class="icon-btn" id="setBtn2" aria-label="Instellingen"><svg><use href="#i-gear"/></svg></button>
+      <button class="icon-btn" id="setBtn2" aria-label="Settings"><svg><use href="#i-gear"/></svg></button>
     </div>
   </div>
 </section>
 
 <div class="sheet-bg" id="dailySheet" hidden>
   <div class="sheet daily-res" role="dialog" aria-modal="true" aria-labelledby="dsTitle">
-    <div class="sheet-head"><h3 id="dsTitle">Dagpuzzel</h3><button class="icon-btn" id="dsClose" aria-label="Sluiten"><svg><use href="#i-close"/></svg></button></div>
-    <p class="small">Je hebt de dagpuzzel van vandaag gespeeld. Je score:</p>
+    <div class="sheet-head"><h3 id="dsTitle">Daily puzzle</h3><button class="icon-btn" id="dsClose" aria-label="Close"><svg><use href="#i-close"/></svg></button></div>
+    <p class="small">You played today's daily puzzle. Your score:</p>
     <div class="ds-score" id="dsScore">0</div>
     <p class="small" id="dsNext"></p>
-    <button class="go" id="dsShare">Deel je score</button>
+    <button class="go" id="dsShare">Share your score</button>
   </div>
 </div>
 
 <div class="sheet-bg" id="sheet" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="setTitle">
-    <div class="sheet-head"><h3 id="setTitle">Instellingen</h3><button class="icon-btn" id="closeSet" aria-label="Sluiten"><svg><use href="#i-close"/></svg></button></div>
+    <div class="sheet-head"><h3 id="setTitle">Settings</h3><button class="icon-btn" id="closeSet" aria-label="Close"><svg><use href="#i-close"/></svg></button></div>
     <div class="group">
-      <div class="toggle"><span>Geluid</span><button class="switch" id="sndSw" role="switch" aria-checked="true" aria-label="Geluid"></button></div>
-      <div class="toggle"><span>Trillen</span><button class="switch" id="vibSw" role="switch" aria-checked="true" aria-label="Trillen"></button></div>
+      <div class="toggle"><span>Sound</span><button class="switch" id="sndSw" role="switch" aria-checked="true" aria-label="Sound"></button></div>
+      <div class="toggle"><span>Vibration</span><button class="switch" id="vibSw" role="switch" aria-checked="true" aria-label="Vibration"></button></div>
     </div>
-    <button class="link-row" id="rulesBtn">Spelregels<svg><use href="#i-next"/></svg></button>
-    <button class="link-row" id="tutBtn">Uitleg opnieuw spelen<svg><use href="#i-next"/></svg></button>
-    <p class="small">Je scores worden alleen op dit toestel bewaard.</p>
+    <button class="link-row" id="rulesBtn">How to play<svg><use href="#i-next"/></svg></button>
+    <button class="link-row" id="tutBtn">Replay the tutorial<svg><use href="#i-next"/></svg></button>
+    <p class="small">Your scores are only saved on this device.</p>
   </div>
 </div>
 
 <div class="sheet-bg" id="levelsSheet" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="lvTitle">
-    <div class="sheet-head"><h3 id="lvTitle">Levels</h3><button class="icon-btn" id="closeLevels" aria-label="Sluiten"><svg><use href="#i-close"/></svg></button></div>
+    <div class="sheet-head"><h3 id="lvTitle">Levels</h3><button class="icon-btn" id="closeLevels" aria-label="Close"><svg><use href="#i-close"/></svg></button></div>
     <p class="small" id="lvStars"></p>
     <div class="lv-grid" id="lvGrid"></div>
   </div>
@@ -292,9 +292,9 @@ button.rec { padding: 10px 12px 12px; border-radius: 18px; font: inherit; }
 
 <div class="sheet-bg" id="rulesSheet" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
-    <div class="sheet-head"><h3 id="rulesTitle">Zo speel je</h3><button class="icon-btn" id="closeRules" aria-label="Sluiten"><svg><use href="#i-close"/></svg></button></div>
+    <div class="sheet-head"><h3 id="rulesTitle">How to play</h3><button class="icon-btn" id="closeRules" aria-label="Close"><svg><use href="#i-close"/></svg></button></div>
     <ol class="rules" id="rules"></ol>
-    <button class="go" id="rulesPlay">Spelen</button>
+    <button class="go" id="rulesPlay">Play</button>
   </div>
 </div>
 <script>
