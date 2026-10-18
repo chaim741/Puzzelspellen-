@@ -14,9 +14,12 @@ const LAB = (() => {
   const cv = $('cv'), ctx = cv.getContext('2d'), stage = $('stage'), well = $('well');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let P = 'app';
+  // a web portal build (CrazyGames) sets window.PLAT before this file: its save storage, gameplay events and ads
+  const plat = window.PLAT || null;
+  const disk = () => (plat && plat.storage) || localStorage;
   const store = {
-    get(k, d) { try { const v = localStorage.getItem(P + '_' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
-    set(k, v) { try { localStorage.setItem(P + '_' + k, JSON.stringify(v)); } catch {} },
+    get(k, d) { try { const v = disk().getItem(P + '_' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { disk().setItem(P + '_' + k, JSON.stringify(v)); } catch {} },
   };
   let W = 0, dpr = 1, cur = null, fx = [], shakeAmt = 0, score = 0, shownScore = 0, ended = false, playing = false;
   let soundOn = true, vibOn = true, mode = 'free', tut = null;
@@ -40,7 +43,7 @@ const LAB = (() => {
   // ---- sound: soft, low "bloops" through a small room echo. Everything passes one compressor, so stacked sounds never clip.
   let ac = null, out = null, verb = null, noiseBuf = null;
   function audio() {
-    if (!soundOn) return null;
+    if (!soundOn || adMuted) return null;
     try {
       if (!ac) {
         ac = new (window.AudioContext || window.webkitAudioContext)();
@@ -54,10 +57,13 @@ const LAB = (() => {
         const nd = noiseBuf.getChannelData(0); for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
         out = comp; verb = conv;
       }
-      if (ac.state !== 'running') ac.resume();
+      if (ac.state !== 'running' && !adMuted) ac.resume();
     } catch { ac = null; }
     return ac;
   }
+  // during a portal ad all sound pauses
+  let adMuted = false;
+  function muteAll(on) { adMuted = on; try { if (ac) on ? ac.suspend() : ac.resume(); } catch {} }
   // iOS only lets sound start from the end of a tap; a silent blip on every tap keeps the audio unlocked
   const unlock = () => { const a = audio(); if (!a) return; try { const b = a.createBuffer(1, 1, 22050), src = a.createBufferSource(); src.buffer = b; src.connect(a.destination); src.start(0); } catch {} };
   for (const ev of ['touchend', 'pointerup', 'click']) addEventListener(ev, unlock, { passive: true, capture: true });
@@ -322,7 +328,7 @@ const LAB = (() => {
         // how far from the record: the "almost" feeling that makes you try again
         const gap = mode === 'free' && !isBest && prev > 0 ? ` ${fmt(prev - score + 1)} more points to beat your best.` : '';
         $('overText').textContent = (reason || '') + gap + (mode === 'daily' ? ' A new daily puzzle is waiting tomorrow.' : '');
-        $('againBtn').textContent = mode === 'daily' ? 'Share your score' : 'Play again';
+        $('againBtn').textContent = mode === 'daily' ? (plat && plat.noShare ? 'Home' : 'Share your score') : 'Play again';
         $('shareBtn').hidden = true;
         openOver();
       }, 600);
@@ -348,6 +354,8 @@ const LAB = (() => {
     // save right away: closing the app during the celebration keeps the stars
     const all = stars(); all[n] = Math.max(all[n] || 0, st); store.set('stars', all);
     if (unlocked() <= n) store.set('level', n + 1);
+    // the portal's own celebration, kept for milestones so it stays special
+    if (plat && plat.happy && st === 3 && n % 10 === 0) plat.happy();
     // every move you have left becomes bonus points, one after another
     const per = 30 + 5 * Math.min(n, 30);
     let i = 0;
@@ -368,7 +376,7 @@ const LAB = (() => {
     $('finalScore').textContent = fmt(score); $('finalScore').hidden = false;
     $('overText').textContent = left ? `${left} ${MW()[left === 1 ? 0 : 1]} to spare.` : 'Just in time!';
     $('againBtn').textContent = 'Next level';
-    $('shareBtn').hidden = false;
+    $('shareBtn').hidden = !!(plat && plat.noShare);
     const box = $('overStars'); box.hidden = false;
     [...box.children].forEach((s, k) => { s.classList.remove('on'); if (k < st) later(() => { s.classList.add('on'); sfx('star', k); buzz('medium'); }, 450 + k * 380); });
     lvl.result = { st, left };
@@ -536,6 +544,8 @@ const LAB = (() => {
   let last = performance.now();
   function frame(now) {
     requestAnimationFrame(frame);
+    // tell the portal when someone is actually playing (not on a menu, result card or sheet)
+    if (plat && plat.gameplay) plat.gameplay(playing && !ended && $('sheet').hidden && $('rulesSheet').hidden);
     const dt = Math.min(50, now - last); last = now;
     if (cur && cur.drawLogo && !playing) drawLogo(now);
     if (!W || !cur || !playing) return;
@@ -618,13 +628,19 @@ const LAB = (() => {
     $('levelsSheet').onclick = e => { if (e.target.id === 'levelsSheet') levels(false); };
     $('homeBtn').onclick = tapThen(() => show('home'));
     $('toHomeBtn').onclick = tapThen(() => show('home'));
-    $('againBtn').onclick = e => {
-      if (mode === 'daily') return shareDaily(e.currentTarget);
+    const again = () => {
       if (mode === 'level' && lvl.result) return play('level', lvl.n + 1);
-      start(false); e.currentTarget.blur();
+      start(false);
+    };
+    $('againBtn').onclick = e => {
+      e.currentTarget.blur();
+      if (mode === 'daily') return plat && plat.noShare ? show('home') : shareDaily(e.currentTarget);
+      // a portal may show an ad at this natural break; the game waits for it, with the sound off
+      if (plat && plat.ad) plat.ad(again, muteAll); else again();
     };
     $('shareBtn').onclick = e => shareLevel(e.currentTarget);
     $('dsShare').onclick = e => shareDaily(e.currentTarget);
+    if (plat && plat.noShare) $('dsShare').hidden = true;
     $('dsClose').onclick = () => dailyResult(false);
     $('dailySheet').onclick = e => { if (e.target.id === 'dailySheet') dailyResult(false); };
     $('restartBtn').onclick = tapThen(() => start(false));

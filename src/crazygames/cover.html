@@ -1,0 +1,31 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="fonts.css"><style>
+*{box-sizing:border-box;margin:0}
+html,body{width:100%;height:100%;overflow:hidden}
+body{background:radial-gradient(120% 90% at 50% 20%,#7fb4ff 0%,#2f7df6 55%,#1d4fae 100%);font-family:Fredoka,sans-serif;position:relative}
+.wrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:var(--dir,row);gap:var(--gap,6vmin)}
+.board{display:grid;grid-template-columns:repeat(5,var(--t));gap:calc(var(--t)*.14);padding:calc(var(--t)*.22);background:#fbf8f2;border-radius:calc(var(--t)*.4);box-shadow:0 calc(var(--t)*.25) 0 #d9d2c4,0 calc(var(--t)*.6) calc(var(--t)*.9) rgba(10,30,80,.45);transform:rotate(-6deg)}
+.tile{width:var(--t);height:var(--t);border-radius:calc(var(--t)*.22);position:relative;box-shadow:inset 0 calc(var(--t)*-.12) 0 rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center}
+.tile::before{content:"";position:absolute;left:12%;right:12%;top:7%;height:22%;border-radius:calc(var(--t)*.12);background:rgba(255,255,255,.32)}
+.tile i{display:block;background:#fff}
+.r{background:#ef5b4c}.r i{width:34%;height:34%;border-radius:50%}
+.o{background:#f5a524}.o i{width:0;height:0;background:none;border-left:calc(var(--t)*.19) solid transparent;border-right:calc(var(--t)*.19) solid transparent;border-bottom:calc(var(--t)*.32) solid #fff}
+.g{background:#2dbf84}.g i{width:32%;height:32%;border-radius:8%}
+.b{background:#3b8cff}.b i{width:30%;height:30%;transform:rotate(45deg);border-radius:6%}
+.pop{transform:scale(1.18) translateY(-8%);z-index:2;box-shadow:inset 0 calc(var(--t)*-.12) 0 rgba(0,0,0,.18),0 0 0 calc(var(--t)*.06) #fff,0 0 calc(var(--t)*.5) rgba(255,255,255,.9)}
+.seam{position:absolute;background:#fff;border-radius:99px;box-shadow:0 0 calc(var(--t)*.3) #fff}
+h1{font-weight:700;color:#fff;font-size:var(--fs);letter-spacing:-.01em;line-height:.95;text-shadow:0 calc(var(--fs)*.06) 0 #1d4fae,0 calc(var(--fs)*.12) calc(var(--fs)*.2) rgba(5,20,60,.45);transform:rotate(-3deg);text-align:center}
+.sp{position:absolute;color:#fff;font-size:var(--s);opacity:.9;text-shadow:0 0 12px #fff}
+</style></head><body>
+<div class="wrap"><div style="position:relative"><div class="board" id="bd"></div></div><h1>Seam<br>Shift</h1></div>
+<script>
+const q=new URLSearchParams(location.search),L=q.get('l');
+const s=document.documentElement.style;
+if(L==='land'){s.setProperty('--t','112px');s.setProperty('--fs','230px');s.setProperty('--gap','110px')}
+if(L==='port'){s.setProperty('--t','100px');s.setProperty('--fs','170px');s.setProperty('--dir','column-reverse');s.setProperty('--gap','70px')}
+if(L==='sq'){s.setProperty('--t','74px');s.setProperty('--fs','118px');s.setProperty('--dir','column-reverse');s.setProperty('--gap','34px')}
+const grid=['ogbrb','rrrgo','bgobg','ooggr','gbrob'],pop=new Set(['1,0','1,1','1,2','3,2','3,3']);
+const bd=document.getElementById('bd');
+grid.forEach((row,y)=>[...row].forEach((c,x)=>{const d=document.createElement('div');d.className='tile '+c+(pop.has(y+','+x)?' pop':'');d.innerHTML='<i></i>';bd.appendChild(d)}));
+const W=innerWidth,H=innerHeight;
+for(let i=0;i<14;i++){const e=document.createElement('div');e.className='sp';e.textContent='✦';const a=i*2.4;e.style.left=(50+Math.cos(a)*(30+i*2.3))+'%';e.style.top=(50+Math.sin(a)*(28+i*2))+'%';e.style.setProperty('--s',(14+(i*7)%26)*(W/1000)+'px');document.body.appendChild(e)}
+</script></body></html>
